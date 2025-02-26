@@ -1,0 +1,8 @@
+{
+  "name": "fusarium",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "Lőrinc Kóródi",
+  "license": "MIT",
+  "private": true
+}
