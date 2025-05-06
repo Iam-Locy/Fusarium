@@ -33,8 +33,20 @@ export function isInBounds(vector) {
     return true;
 }
 
+export function clamp(min, max, val) {
+    if (min > val) {
+        return min;
+    }
+
+    if (max < val) {
+        return max;
+    }
+
+    return val;
+}
+
 export function wrap(vector) {
-    let outVector = { x: vector.x, y: vector.y};
+    let outVector = { x: vector.x, y: vector.y };
 
     if (vector.x < 0) {
         outVector.x = sim.config.wrap[0] ? sim.config.ncol + vector.x : 0;
@@ -58,3 +70,11 @@ export function wrap(vector) {
 
     return outVector;
 }
+
+export function shuffle(array){ 
+    for (let i = array.length - 1; i > 0; i--) { 
+      const j = Math.floor(sim.rng.random() * (i + 1)); 
+      [array[i], array[j]] = [array[j], array[i]]; 
+    } 
+    return array; 
+}; 
