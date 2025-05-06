@@ -9,27 +9,26 @@ export default class Tip {
         this.direction = direction;
         this.vectors = this.getMovementVectors(this.direction);
     }
+    static AXIS_VECTORS = {
+        0: { x: 1, y: 0 },
+        [Math.PI / 2]: { x: 0, y: 1 },
+        [Math.PI]: { x: -1, y: 0 },
+        [(3 * Math.PI) / 2]: { x: 0, y: -1 },
+    };
 
     getMovementVectors(direction) {
-        const AXIS_VECTORS = {
-            0: { x: 1, y: 0 },
-            [Math.PI / 2]: { x: 0, y: 1 },
-            [Math.PI]: { x: -1, y: 0 },
-            [(3 * Math.PI) / 2]: { x: 0, y: -1 },
-        };
-
-        let v1 = AXIS_VECTORS[0];
-        let v2 = AXIS_VECTORS[0];
+        let v1 = Tip.AXIS_VECTORS[0];
+        let v2 = Tip.AXIS_VECTORS[0];
 
         let angle1 = direction;
         let angle2 = 2 * Math.PI - direction;
 
         for (let i = 0; i < 2 * Math.PI; i += Math.PI / 2) {
             if (direction > i) {
-                v1 = AXIS_VECTORS[i];
+                v1 = Tip.AXIS_VECTORS[i];
                 angle1 = direction - i;
             } else {
-                v2 = AXIS_VECTORS[i];
+                v2 = Tip.AXIS_VECTORS[i];
                 angle2 = i - direction;
                 break;
             }
@@ -44,35 +43,14 @@ export default class Tip {
     grow(model) {
         let step;
 
-        let vectors = this.vectors
-            .filter((v) => {
-                return isInBounds({ x: this.x + v.x, y: this.y + v.y });
-            })
-            .filter((v) => {
-                let vec = wrap({ x: this.x + v.x, y: this.y + v.y });
+        let vectors = this.vectors.filter((v) => {
+            return isInBounds({ x: this.x + v.x, y: this.y + v.y });
+        });
 
-                let plantVec = {
-                    x: Math.floor(vec.x / sim.config.plant_scale),
-                    y: Math.floor(vec.y / sim.config.plant_scale),
-                };
-
-                if (sim.plants.grid[plantVec.x][plantVec.y].plant) {
-                    if (
-                        !this.parent.hosts.find((host) => {
-                            host ==
-                                sim.plants.grid[plantVec.x][plantVec.y].plant;
-                        })
-                    ) {
-                        if (sim.rng.random() < sim.config.colonisation_chance) {
-                            this.parent.hosts.push(sim.plants.grid[plantVec.x][plantVec.y].plant)
-                        } else {
-                            return false
-                        }
-                    }
-                }
-
-                return !model.grid[vec.x][vec.y].fungus;
-            });
+        vectors = vectors.filter((v) => {
+            let vec = wrap({ x: this.x + v.x, y: this.y + v.y });
+            return !model.grid[vec.x][vec.y].fungus;
+        });
 
         switch (vectors.length) {
             case 1:
@@ -81,7 +59,9 @@ export default class Tip {
             case 2:
                 step = sample(
                     vectors,
-                    vectors.map((v) => v.prob)
+                    vectors.map((v) => {
+                        return v.prob;
+                    })
                 );
                 break;
             default:
@@ -92,6 +72,43 @@ export default class Tip {
 
         this.x = nextPos.x;
         this.y = nextPos.y;
+
+        let plantVec = {
+            x: Math.floor(this.x / sim.config.plant_scale),
+            y: Math.floor(this.y / sim.config.plant_scale),
+        };
+
+        let plant = sim.field.grid[plantVec.x][plantVec.y].plant;
+
+        if (plant) {
+            if (
+                !this.parent.hosts.find((host) => {
+                    return host == plant;
+                })
+            ) {
+                let canInvade = false;
+
+                Object.keys(this.parent.genome.core).forEach((key) => {
+                    if (
+                        !plant.genome.includes(key) &&
+                        this.parent.genome.core[key] == "toxin"
+                    )
+                        canInvade = true;
+                });
+
+                Object.keys(this.parent.genome.mobile).forEach((key) => {
+                    if (
+                        !plant.genome.includes(key) &&
+                        this.parent.genome.mobile[key] == "toxin"
+                    )
+                        canInvade = true;
+                });
+
+                if (canInvade) {
+                    this.parent.hosts.push(plant);
+                }
+            }
+        }
 
         this.parent.hypha.push([this.x, this.y]);
         model.grid[this.x][this.y].fungus = this.parent;

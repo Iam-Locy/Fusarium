@@ -1,8 +1,16 @@
 {
   "name": "fusarium",
-  "version": "1.0.0",
-  "main": "main.js",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/main.js",
+  "scripts": {
+    "run": "node ./src/main.js"
+  },
   "author": "Lőrinc Kóródi",
   "license": "MIT",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "cacatoo": "^2.1.0",
+    "yargs": "^17.7.2"
+  }
 }
