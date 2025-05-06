@@ -1,9 +1,9 @@
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { clamp, sample, shuffle } from "./util.js";
-//import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
-//import yargs from "yargs";
-//import { hideBin } from "yargs/helpers";
+import { sample, shuffle } from "./util.js";
+import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
 // Configuration constant for the cacatoo simulation
 var config = {
@@ -13,7 +13,7 @@ var config = {
     ncol: 1300,
     nrow: 1300,
     wrap: [true, true],
-    scale: 1,
+    scale: 3,
     skip: 5,
     seed: Math.floor(Math.random() * 100),
     statecolours: {
@@ -42,9 +42,9 @@ var config = {
     tilling: false,
     uptake: 1,
     upkeep: 0.1,
-    mobile_ratio: 1,
-    parasite_ratio: 0.5,
-    hgt_rate: 0.05,
+    mobile_ratio: 0.5,
+    parasite_ratio: 1,
+    hgt_rate: 1,
     loss_rate: 0.01,
     gain_rate: 0.01
 };
@@ -213,11 +213,16 @@ const fusarium = (config) => {
             }
 
             fungi.forEach((fungus) => {
+                console.log(fungus)
                 fungus.connectedTo.forEach((network) => {
-                    if (sim.rng.random() < 0.1) {
+                    console.log(network)
+                    if (sim.rng.random() < sim.config.hgt_rate) {
+                       
                         fungus.hgt(network);
                     }
                 });
+                console.log(fungus)
+
 
                 let nSpores =
                     (fungus.resource * fungus.hypha.length) ** (1 / 3) *
@@ -414,7 +419,7 @@ const fusarium = (config) => {
     };
 
     sim.field.update = function () {
-        if (sim.time % sim.config.year_len == 0) {
+        if (sim.time % sim.config.year_len == 0 && typeof process === "object") {
             let plantOut = "";
 
             plants.forEach((p) => {
@@ -443,6 +448,10 @@ const fusarium = (config) => {
             );
         }
     };
+
+    sim.addButton("Toggle play", () =>{
+        sim.toggle_play()
+    })
 
     sim.start();
 };

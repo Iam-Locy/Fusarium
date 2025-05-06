@@ -244,10 +244,9 @@ export default class Fungus {
     }
 
     hgt(network) {
-        if (Object.keys(this.genome.mobile).length == 0) return;
-
+        if (Object.keys(this.genome.mobile).length != 0) return;
         Object.keys(network.genome.mobile).forEach((gene) => {
-            if (!gene in this.genome.mobile) {
+            if (!(gene in Object.keys(this.genome.mobile))) {
                 this.genome.mobile[gene] = network.genome.mobile[gene];
             }
         });
@@ -267,7 +266,6 @@ export default class Fungus {
         });
 
         colour = colour.join("")
-
         this.colour = colour == "" ? "none" : colour
     }
 }
