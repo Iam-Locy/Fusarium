@@ -1,12 +1,12 @@
 import Tip from "./tip.js";
-import { genID, sample, wrap } from "./util.js";
+import { idGenerator, sample, wrap } from "./util.js";
 import { sim } from "./main.js";
 
-const idGenerator = genID();
+const genID = idGenerator();
 
 export default class Fungus {
     constructor(colour, genome, resource, uptake, upkeep, parent) {
-        this.id = idGenerator.next().value;
+        this.id = genID.next().value;
         this.colour = colour;
         this.hypha = [];
         this.tips = [];

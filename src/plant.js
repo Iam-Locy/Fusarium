@@ -1,11 +1,11 @@
-import { genID } from "./util.js";
+import { idGenerator } from "./util.js";
 import { sim } from "./main.js";
 
-const idGenerator = genID();
+const genID = idGenerator();
 
 export default class Plant {
     constructor(x, y, resource, genome, production, upkeep) {
-        this.id = idGenerator.next().value;
+        this.id = genID.next().value;
         this.x = x;
         this.y = y;
         this.xRange = [

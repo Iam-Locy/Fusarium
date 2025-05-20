@@ -1,6 +1,6 @@
 import { sim } from "./main.js";
 
-export function* genID() {
+export function* idGenerator() {
     let index = 1;
     while (true) {
         yield index++;
