@@ -71,10 +71,66 @@ export function wrap(vector) {
     return outVector;
 }
 
-export function shuffle(array){ 
-    for (let i = array.length - 1; i > 0; i--) { 
-      const j = Math.floor(sim.rng.random() * (i + 1)); 
-      [array[i], array[j]] = [array[j], array[i]]; 
-    } 
-    return array; 
-}; 
+export function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(sim.rng.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+export function drawLine(model, props, values, start, end) {
+    if (!Array.isArray(props)){
+        props = [props]
+    }
+
+    if (!Array.isArray(values)){
+        values = [values]
+    }
+
+    if (Math.abs(end.y - start.y) < Math.abs(end.x - start.x)) {
+        if (end.x < start.x) {
+            let temp = start;
+            start = end;
+            end = temp;
+        }
+
+        let vector = { x: end.x - start.x, y: end.y - start.y };
+        let m = vector.x !== 0 ? vector.y / vector.x : 1;
+
+        for (let i = 0; i < Math.floor(vector.x) + 1; i++) {
+            let x = start.x + i;
+            let y = start.y + i * m;
+
+            let ix = Math.floor(x);
+            let iy = Math.floor(y);
+
+            for (let i = 0; i < props.length; i++) {
+                model.grid[ix][iy][props[i]] = values[i];
+                model.grid[ix][iy + 1][props[i]] = values[i];
+            }
+        }
+    } else {
+        if (end.y < start.y) {
+            let temp = start;
+            start = end;
+            end = temp;
+        }
+
+        let vector = { x: end.x - start.x, y: end.y - start.y };
+        let m = vector.y !== 0 ? vector.x / vector.y : 1;
+
+        for (let i = 0; i < Math.floor(vector.y) + 1; i++) {
+            let x = start.x + i * m;
+            let y = start.y + i;
+
+            let ix = Math.floor(x);
+            let iy = Math.floor(y);
+
+            for (let i = 0; i < props.length; i++) {
+                model.grid[ix][iy][props[i]] = values[i];
+                model.grid[ix + 1][iy][props[i]] = values[i];
+            }
+        }
+    }
+}
