@@ -79,13 +79,14 @@ export function shuffle(array) {
     return array;
 }
 
+//This is a modified version of Xiaolin Wu's Line Algorithm
 export function drawLine(model, props, values, start, end) {
-    if (!Array.isArray(props)){
-        props = [props]
+    if (!Array.isArray(props)) {
+        props = [props];
     }
 
-    if (!Array.isArray(values)){
-        values = [values]
+    if (!Array.isArray(values)) {
+        values = [values];
     }
 
     if (Math.abs(end.y - start.y) < Math.abs(end.x - start.x)) {
@@ -102,12 +103,16 @@ export function drawLine(model, props, values, start, end) {
             let x = start.x + i;
             let y = start.y + i * m;
 
-            let ix = Math.floor(x);
-            let iy = Math.floor(y);
+            let ivec1 = wrap({
+                x: Math.floor(x),
+                y: Math.floor(y),
+            });
 
-            for (let i = 0; i < props.length; i++) {
-                model.grid[ix][iy][props[i]] = values[i];
-                model.grid[ix][iy + 1][props[i]] = values[i];
+            let ivec2 = wrap({ x: ivec1.x, y: ivec1.y + 1 });
+
+            for (let p = 0; p < props.length; p++) {
+                model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
+                model.grid[ivec2.x][ivec2.y][props[p]] = values[p];
             }
         }
     } else {
@@ -124,13 +129,35 @@ export function drawLine(model, props, values, start, end) {
             let x = start.x + i * m;
             let y = start.y + i;
 
-            let ix = Math.floor(x);
-            let iy = Math.floor(y);
+            let ivec1 = wrap({
+                x: Math.floor(x),
+                y: Math.floor(y),
+            });
 
-            for (let i = 0; i < props.length; i++) {
-                model.grid[ix][iy][props[i]] = values[i];
-                model.grid[ix + 1][iy][props[i]] = values[i];
+            let ivec2 = wrap({ x: ivec1.x + 1, y: ivec1.y });
+
+            for (let p = 0; p < props.length; p++) {
+                model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
+                model.grid[ivec2.x][ivec2.y][props[p]] = values[p];
             }
         }
     }
+}
+
+export function drawSpot(model, props, values, size, coord) {
+    if (!Array.isArray(props)) {
+        props = [props];
+    }
+
+    if (!Array.isArray(values)) {
+        values = [values];
+    }
+
+    let individual = {};
+
+    for (let i = 0; i < props.length; i++) {
+        individual[props[i]] = values[i];
+    }
+    console.log(individual);
+    sim.populateSpot(model, [individual], [1], size, coord.x, coord.y);
 }
