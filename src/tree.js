@@ -3,9 +3,9 @@ import { idGenerator } from "./util.js";
 const genID = idGenerator();
 
 export class Tree {
-    constructor() {
+    constructor(root = new Node()) {
         this.id = genID.next().value;
-        this.root = new Node();
+        this.root = root;
     }
 
     *preOrderTraversal(node = this.root) {
@@ -26,24 +26,26 @@ export class Tree {
 }
 
 export class Node {
-    constructor(parent = undefined) {
+    constructor(pos) {
         this.id = genID.next().value;
-        this.parent = parent;
+        this.parent = undefined;
         this.children = [];
-        if (parent) {
-            this.parent.addChild(this);
-        }
+        this.pos = pos
     }
 
     addChild(node) {
         if (this.children.includes(node)) {
             return false;
         }
-        this.children.push(node);
+        
 
         if (node.parent) {
             return false;
         }
+
+        this.children.push(node);
+        node.parent = this
+
         return true;
     }
 
