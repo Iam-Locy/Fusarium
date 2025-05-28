@@ -144,7 +144,7 @@ export function drawLine(model, props, values, start, end) {
     }
 }
 
-export function drawSpot(model, props, values, size, coord) {
+export function drawSpot(model, props, values, r, pos) {
     if (!Array.isArray(props)) {
         props = [props];
     }
@@ -153,11 +153,44 @@ export function drawSpot(model, props, values, size, coord) {
         values = [values];
     }
 
-    let individual = {};
+    let x = 0; //We start from
+    let y = -r; //the highest point on the circle
 
-    for (let i = 0; i < props.length; i++) {
-        individual[props[i]] = values[i];
+    //p shows whether we are inside or outside of the circle.
+    //y+0.5 is the y coordinate of the vertical midpoint between 2 pixels.
+    //p = x^2 + (y+0.5)^2 - r^2 = 0^2 + (-r+0.5)^2 - r^2
+    let p = -r + 0.25;
+
+    while (x < -y) {
+        if (p > 0) {
+            y++; //The midpoint is outside of the circle ==> we take a step down.
+
+            //delta_p = p_next - p
+            //p_next  = (x+1)^2 + (y+0.5)^2 - r^2 and y is already increased
+            //so we have to use the previous midpoint: y-0.5.
+            //delta_p = (x+1)^2 + (y+0.5)^2 - r^2 - x^2 - (y-0.5)^2 + r^2
+            //delta_p = (x+1)^2 + (y+0.5)^2 - x^2 - (y-0.5)^2 = 2(x+y) + 1
+            p += 2*(x+y)+1;
+        } else {
+            //delta_p = p_next - p
+            //p_next  = (x+1)^2 + (y+0.5)^2 - r^2
+            //delta_p = (x+1)^2 + (y+0.5)^2 - r^2 - x^2 - (y+0.5)^2 + r^2
+            //delta_p = (x+1)^2 - x^2 = 2x + 1
+            p += 2 * x + 1;
+        }
+
+        for (let i = 0; i < props.length; i++) {
+            for (let delta = -x; delta <= x; delta++) {
+                model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
+                model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
+            }
+
+            for (let delta = -y; delta >= y; delta--) {
+                model.grid[pos.x + delta][pos.y + x][props[i]] = values[i];
+                model.grid[pos.x + delta][pos.y - x][props[i]] = values[i];
+            }
+        }
+
+        x++;
     }
-    console.log(individual);
-    sim.populateSpot(model, [individual], [1], size, coord.x, coord.y);
 }

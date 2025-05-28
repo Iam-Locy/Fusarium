@@ -1,6 +1,6 @@
 import { sim } from "./main.js";
 import { Node, Tree } from "./tree.js";
-import { drawLine, drawSpot, idGenerator } from "./util.js";
+import { clamp, drawLine, drawSpot, idGenerator } from "./util.js";
 
 let genID = idGenerator();
 
@@ -10,12 +10,19 @@ export default class Plant {
         this.genome = genome;
         this.pos = pos;
         this.center = Plant.plantCenter(this.pos);
-        this.rootSystem = this.placePlant();
         this.resources = {
             amount: resource,
             production: production,
             upkeep: upkeep,
         };
+        this.health = clamp(
+            0,
+            1,
+            this.resources.amount /
+                (this.resources.production / this.resources.upkeep)
+        );
+        this.rootSystem = this.placePlant();
+        this.drawPlant();
     }
 
     static plantCenter(vec) {
@@ -32,17 +39,27 @@ export default class Plant {
     }
 
     vegetative() {
-        this.resource +=
-            this.resource * this.production - this.resource ** 2 * this.upkeep;
+        this.resources.amount +=
+            this.resources.amount * this.resources.production -
+            this.resources.amount ** 2 * this.resources.upkeep;
 
         if (
-            this.resource / (this.production / this.upkeep) < 0.1 ||
-            isNaN(this.resource)
+            this.resources.amount /
+                (this.resources.production / this.resources.upkeep) <
+                0.1 ||
+            isNaN(this.resources.amount)
         ) {
             this.die;
         }
 
-        return this.resource;
+        this.health = clamp(
+            0,
+            1,
+            this.resources.amount /
+                (this.resources.production / this.resources.upkeep)
+        );
+        this.drawPlant();
+        return this.resources.amount;
     }
 
     die() {
@@ -56,18 +73,10 @@ export default class Plant {
     placePlant() {
         let root = new Tree(new plantNode(this.center));
 
-        drawSpot(
-            sim.field,
-            ["health", "plant", "pColour"],
-            [1, this, this.genome],
-            10,
-            this.center
-        );
-
         for (let i = 0; i < 3; i++) {
-            let min_angle = (i * (2 * Math.PI)) / 3 + (30 * Math.PI) / 180;
+            let min_angle = (i * (2 * Math.PI)) / 3 + (35 * Math.PI) / 180;
             let max_angle =
-                ((i + 1) * (2 * Math.PI)) / 3 - (30 * Math.PI) / 180;
+                ((i + 1) * (2 * Math.PI)) / 3 - (35 * Math.PI) / 180;
 
             let layer_1_dir =
                 min_angle + sim.rng.random() * (max_angle - min_angle);
@@ -87,21 +96,6 @@ export default class Plant {
 
             let layer_1_node = new plantNode(layer_1_center);
             root.root.addChild(layer_1_node);
-
-            drawSpot(
-                sim.field,
-                ["health", "plant", "pColour"],
-                [1, this, this.genome],
-                10,
-                layer_1_center
-            );
-            drawLine(
-                sim.field,
-                ["health", "plant", "pColour"],
-                [1, this, this.genome],
-                root.root.pos,
-                layer_1_node.pos
-            );
 
             for (let j = 0; j < 2; j++) {
                 let modifier = j > 0 ? 1 : -1;
@@ -124,25 +118,33 @@ export default class Plant {
 
                 let layer_2_node = new plantNode(layer_2_center);
                 layer_1_node.addChild(layer_2_node);
-
-                drawSpot(
-                    sim.field,
-                    ["health", "plant", "pColour"],
-                    [1, this, this.genome],
-                    10,
-                    layer_2_center
-                );
-                drawLine(
-                    sim.field,
-                    ["health", "plant", "pColour"],
-                    [1, this, this.genome],
-                    layer_1_node.pos,
-                    layer_2_node.pos
-                );
             }
         }
-
         return root;
+    }
+
+    drawPlant() {
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(
+                sim.field,
+                ["health", "plant", "pColour"],
+                [this.health, this, this.genome],
+                3,
+                node.pos
+            );
+
+            if (node.children.length > 0) {
+                node.children.forEach((child) => {
+                    drawLine(
+                        sim.field,
+                        ["health", "pColour"],
+                        [this.health, this.genome],
+                        node.pos,
+                        child.pos
+                    );
+                });
+            }
+        }
     }
 }
 
