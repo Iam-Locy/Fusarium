@@ -1,3 +1,4 @@
+import { Genome } from "./genome.js";
 import { sim } from "./main.js";
 import { Node, Tree } from "./tree.js";
 import { clamp, drawLine, drawSpot, idGenerator } from "./util.js";
@@ -5,9 +6,9 @@ import { clamp, drawLine, drawSpot, idGenerator } from "./util.js";
 let genID = idGenerator();
 
 export default class Plant {
-    constructor(pos, resource, genome, production, upkeep) {
+    constructor(pos, resource, genes, production, upkeep) {
         this.id = genID.next().value;
-        this.genome = genome;
+        this.genome = new Genome(genes);
         this.pos = pos;
         this.center = Plant.plantCenter(this.pos);
         this.resources = {
@@ -127,8 +128,8 @@ export default class Plant {
         for (let node of this.rootSystem.preOrderTraversal()) {
             drawSpot(
                 sim.field,
-                ["health", "plant", "pColour"],
-                [this.health, this, this.genome],
+                ["health", "plant"],
+                [this.health, this],
                 3,
                 node.pos
             );
@@ -137,8 +138,8 @@ export default class Plant {
                 node.children.forEach((child) => {
                     drawLine(
                         sim.field,
-                        ["health", "pColour"],
-                        [this.health, this.genome],
+                        ["health"],
+                        [this.health],
                         node.pos,
                         child.pos
                     );

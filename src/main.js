@@ -1,6 +1,7 @@
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { clamp, sample, shuffle } from "./util.js";
+import { sample, shuffle } from "./util.js";
+import { Gene } from "./genome.js";
 //import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 //import yargs from "yargs";
 //import { hideBin } from "yargs/helpers";
@@ -10,8 +11,8 @@ var config = {
     title: "Fusarium",
     description: "",
     maxtime: 100000,
-    ncol: 1300,
-    nrow: 1300,
+    ncol: 600,
+    nrow: 600,
     wrap: [true, true],
     scale: 1,
     skip: 5,
@@ -46,7 +47,7 @@ var config = {
     parasite_ratio: 0.5,
     hgt_rate: 0.05,
     loss_rate: 0.01,
-    gain_rate: 0.01
+    gain_rate: 0.01,
 };
 
 export let sim;
@@ -63,23 +64,16 @@ const fusarium = (config) => {
 
     sim.config = {
         ...config,
-        ncol: (Math.floor(config.ncol / config.plant_scale) - 1) / 2,
-        nrow: (Math.floor(config.nrow / config.plant_scale) - 1) / 2,
-        scale: config.plant_scale * config.scale,
-    };
-
-    sim.makeGridmodel("plants");
-
-    sim.config = {
-        ...config,
         ncol: Math.floor(config.ncol / config.plant_scale),
         nrow: Math.floor(config.nrow / config.plant_scale),
         scale: config.plant_scale * config.scale,
     };
 
-    sim.makeGridmodel("field");
+    sim.makeGridmodel("plants");
 
     sim.config = config;
+
+    sim.makeGridmodel("field");
 
     sim.initialGrid(sim.fusoxy, "fungus", null);
     sim.initialGrid(sim.fusoxy, "colour", 0);
@@ -155,29 +149,32 @@ const fusarium = (config) => {
 
     for (
         let x = 0;
-        x < (Math.floor(sim.config.ncol / sim.config.plant_scale) - 1) / 2;
+        x < Math.floor(sim.config.ncol / sim.config.plant_scale);
         x++
     ) {
         for (
             let y = 0;
-            y < (Math.floor(sim.config.nrow / sim.config.plant_scale) - 1) / 2;
+            y < Math.floor(sim.config.nrow / sim.config.plant_scale);
             y++
         ) {
-            let genome =
+            let genes =
                 sim.rng.random() < 0.33
                     ? "xy"
                     : sim.rng.random() < 0.5
                     ? "xz"
                     : "yz";
-            let plant = new Plant(x, y, 2000, genome, 0.02, 0.000005);
 
+            let geneList = []
+            
+            for(let g of genes){
+                let gene = new Gene(g, "immunity")
+                geneList.push(gene)
+            }
+
+            let plant = new Plant({ x, y }, sim.rng.genrand_int(1000,4000), geneList, 0.02, 0.0000005);
             plants.push(plant);
 
             sim.plants.grid[x][y].plant = plant;
-            sim.field.grid[2 * x + 1][2 * y + 1].health =
-                plant.resource / (plant.production / plant.upkeep);
-            sim.field.grid[2 * x + 1][2 * y + 1].plant = plant;
-            sim.field.grid[2 * x + 1][2 * y + 1].pColour = genome;
         }
     }
 
@@ -196,8 +193,6 @@ const fusarium = (config) => {
         nticks: 10,
         maxval: 1,
     });
-
-    sim.createDisplay("field", "pColour", "Fusarium oxysporum mycelium");
 
     sim.fusoxy.update = () => {
         if (sim.time % config.year_len == 0 && sim.time != 0) {
@@ -401,13 +396,10 @@ const fusarium = (config) => {
         plants.forEach((plant) => {
             plant.vegetative();
 
-            if (plant.resource < 0.1 || isNaN(plant.resource)) {
+            if (plant.resources.amount < 0.1 || isNaN(plant.resources.amount)) {
                 plant.die();
             } else {
                 newPlants.push(plant);
-
-                sim.field.grid[2 * plant.x + 1][2 * plant.y + 1].health =
-                    plant.resource / (plant.production / plant.upkeep);
             }
         });
         plants = newPlants;
