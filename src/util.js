@@ -46,7 +46,7 @@ export function clamp(min, max, val) {
 }
 
 export function wrap(vector) {
-    let outVector = { x: vector.x, y: vector.y };
+    let outVector = new Vector(vector.x, vector.y);
 
     if (vector.x < 0) {
         outVector.x = sim.config.wrap[0] ? sim.config.ncol + vector.x : 0;
@@ -89,6 +89,10 @@ export function drawLine(model, props, values, start, end) {
         values = [values];
     }
 
+    start = new Vector(Math.round(start.x), Math.round(start.y));
+
+    end = new Vector(Math.round(end.x), Math.round(end.y));
+
     if (Math.abs(end.y - start.y) < Math.abs(end.x - start.x)) {
         if (end.x < start.x) {
             let temp = start;
@@ -96,19 +100,16 @@ export function drawLine(model, props, values, start, end) {
             end = temp;
         }
 
-        let vector = { x: end.x - start.x, y: end.y - start.y };
+        let vector = new Vector(end.x - start.x, end.y - start.y);
         let m = vector.x !== 0 ? vector.y / vector.x : 1;
 
         for (let i = 0; i < Math.floor(vector.x) + 1; i++) {
             let x = start.x + i;
             let y = start.y + i * m;
 
-            let ivec1 = wrap({
-                x: Math.floor(x),
-                y: Math.floor(y),
-            });
+            let ivec1 = wrap(new Vector(Math.floor(x), Math.floor(y)));
 
-            let ivec2 = wrap({ x: ivec1.x, y: ivec1.y + 1 });
+            let ivec2 = wrap(new Vector(ivec1.x, ivec1.y + 1));
 
             for (let p = 0; p < props.length; p++) {
                 model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
@@ -129,12 +130,9 @@ export function drawLine(model, props, values, start, end) {
             let x = start.x + i * m;
             let y = start.y + i;
 
-            let ivec1 = wrap({
-                x: Math.floor(x),
-                y: Math.floor(y),
-            });
+            let ivec1 = wrap(new Vector(Math.floor(x), Math.floor(y)));
 
-            let ivec2 = wrap({ x: ivec1.x + 1, y: ivec1.y });
+            let ivec2 = wrap(new Vector(ivec1.x + 1, ivec1.y));
 
             for (let p = 0; p < props.length; p++) {
                 model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
@@ -170,7 +168,7 @@ export function drawSpot(model, props, values, r, pos) {
             //so we have to use the previous midpoint: y-0.5.
             //delta_p = (x+1)^2 + (y+0.5)^2 - r^2 - x^2 - (y-0.5)^2 + r^2
             //delta_p = (x+1)^2 + (y+0.5)^2 - x^2 - (y-0.5)^2 = 2(x+y) + 1
-            p += 2*(x+y)+1;
+            p += 2 * (x + y) + 1;
         } else {
             //delta_p = p_next - p
             //p_next  = (x+1)^2 + (y+0.5)^2 - r^2
@@ -192,5 +190,20 @@ export function drawSpot(model, props, values, r, pos) {
         }
 
         x++;
+    }
+}
+
+export class Vector {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.isInBounds = isInBounds(this);
+    }
+
+    static rounded(vector) {
+        let x = Math.round(vector.x);
+        let y = Math.round(vector.y);
+
+        return new Vector(x, y);
     }
 }

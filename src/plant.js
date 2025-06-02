@@ -1,7 +1,7 @@
 import { Genome } from "./genome.js";
 import { sim } from "./main.js";
 import { Node, Tree } from "./tree.js";
-import { clamp, drawLine, drawSpot, idGenerator } from "./util.js";
+import { clamp, drawLine, drawSpot, idGenerator, Vector } from "./util.js";
 
 let genID = idGenerator();
 
@@ -27,14 +27,12 @@ export default class Plant {
     }
 
     static plantCenter(vec) {
-        let newVec = {
-            x:
-                vec.x * sim.config.plant_scale +
+        let newVec = new Vector(
+            vec.x * sim.config.plant_scale +
                 Math.floor(sim.config.plant_scale / 2),
-            y:
-                vec.y * sim.config.plant_scale +
-                Math.floor(sim.config.plant_scale / 2),
-        };
+            vec.y * sim.config.plant_scale +
+                Math.floor(sim.config.plant_scale / 2)
+        );
 
         return newVec;
     }
@@ -82,18 +80,16 @@ export default class Plant {
             let layer_1_dir =
                 min_angle + sim.rng.random() * (max_angle - min_angle);
 
-            let layer_1_center = {
-                x:
-                    root.root.pos.x +
+            let layer_1_center = new Vector(
+                root.root.pos.x +
                     Math.round(
                         sim.rng.genrand_int(10, 15) * Math.cos(layer_1_dir)
                     ),
-                y:
-                    root.root.pos.y +
+                root.root.pos.y +
                     Math.round(
                         sim.rng.genrand_int(10, 15) * Math.sin(layer_1_dir)
-                    ),
-            };
+                    )
+            );
 
             let layer_1_node = new plantNode(layer_1_center);
             root.root.addChild(layer_1_node);
@@ -104,18 +100,16 @@ export default class Plant {
                     layer_1_dir +
                     modifier * ((sim.rng.genrand_int(30, 60) * Math.PI) / 180);
 
-                let layer_2_center = {
-                    x:
-                        layer_1_node.pos.x +
+                let layer_2_center = new Vector(
+                    layer_1_node.pos.x +
                         Math.round(
                             sim.rng.genrand_int(10, 15) * Math.cos(layer_2_dir)
                         ),
-                    y:
-                        layer_1_node.pos.y +
+                    layer_1_node.pos.y +
                         Math.round(
                             sim.rng.genrand_int(10, 15) * Math.sin(layer_2_dir)
-                        ),
-                };
+                        )
+                );
 
                 let layer_2_node = new plantNode(layer_2_center);
                 layer_1_node.addChild(layer_2_node);
