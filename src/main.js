@@ -34,12 +34,13 @@ var config = {
             yz: "red",
         },
     },
-    spores: 100, //Number of starting spores
-    spore_ratio: 0.01,
+    spores: 5, //Number of starting spores
+    spore_ratio: 0.02,
     num_colours: 30,
-    year_len: 1000,
-    branch_chance: 0.8,
-    plant_scale: 100,
+    year_len: 2000,
+    branch_chance: 0.005,
+    tip_speed: 0.5,
+    plant_scale: 200,
     tilling: false,
     uptake: 1,
     upkeep: 0.1,
@@ -75,7 +76,7 @@ const fusarium = (config) => {
 
     sim.makeGridmodel("field");
 
-    sim.initialGrid(sim.fusoxy, "fungus", null);
+    sim.initialGrid(sim.fusoxy, "fungi", new Set([]));
     sim.initialGrid(sim.fusoxy, "colour", 0);
 
     sim.initialGrid(sim.field, "health", null);
@@ -84,65 +85,70 @@ const fusarium = (config) => {
     sim.initialGrid(sim.plants, "plant", null);
 
     for (let i = 0; i < config.spores; i++) {
-        let x = sim.rng.genrand_int(0, config.ncol - 1);
-        let y = sim.rng.genrand_int(0, config.nrow - 1);
-
-        let toxin = sample(["x", "y", "z"]);
-
-        let genome = {
-            core: {
-                a: "hc",
-                b: "hc",
-                c: "hc",
-            },
-            mobile: {},
+        let pos = {
+            x: sim.rng.genrand_int(0, config.ncol - 1),
+            y: sim.rng.genrand_int(0, config.nrow - 1),
         };
+
+        let pathogenicity = sample(["x", "y", "z"]);
+
+        let coreGenes = [
+            new Gene("a", "house_keeping"),
+            new Gene("b", "house_keeping"),
+            new Gene("c", "house_keeping"),
+        ];
+
+        let mobileGenes = [];
 
         if (sim.rng.random() < sim.config.parasite_ratio) {
             if (sim.rng.random() < sim.config.mobile_ratio) {
-                genome.mobile[toxin] = "toxin";
+                mobileGenes.push(new Gene(pathogenicity, "pathogenicity"));
             } else {
-                genome.core[toxin] = "toxin";
+                coreGenes.push(new Gene(pathogenicity, "pathogenicity"));
             }
         }
 
         ["k", "l", "m"].forEach((g) => {
             if (sim.rng.random() < 0.33) {
-                genome.core[g] = "junk";
+                coreGenes.push(new Gene(g, "junk"));
             }
         });
 
+        let genome = {
+            core: coreGenes,
+            mobile: mobileGenes
+        }
+
         let colour = ["", "", ""];
 
-        Object.keys(genome.core).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
+        genome.core.forEach((gene) => {
+            if (gene.name == "x") colour[0] = "x";
+            if (gene.name == "y") colour[1] = "y";
+            if (gene.name == "z") colour[2] = "z";
         });
 
-        Object.keys(genome.mobile).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
+        genome.mobile.forEach((gene) => {
+            if (gene.name == "x") colour[0] = "x";
+            if (gene.name == "y") colour[1] = "y";
+            if (gene.name == "z") colour[2] = "z";
         });
 
         colour = colour.join("");
 
         let fungus = new Fungus(
+            pos,
             colour == "" ? "none" : colour,
             genome,
             100,
             sim.config.uptake,
-            sim.config.upkeep,
-            null
+            sim.config.upkeep
         );
         fungi.push(fungus);
 
-        let tip = fungus.addTip(x, y, sim.rng.random() * 2 * Math.PI);
-        tips.push(tip);
+        tips.push(...fungus.tips);
 
-        sim.fusoxy.grid[x][y].fungus = fungus;
-        sim.fusoxy.grid[x][y].colour = fungus.colour;
+        sim.fusoxy.grid[pos.x][pos.y].fungi.add(fungus);
+        sim.fusoxy.grid[pos.x][pos.y].colour = fungus.colour;
     }
 
     sim.createDisplay("fusoxy", "colour", "Fusarium oxysporum mycelium");
@@ -164,14 +170,20 @@ const fusarium = (config) => {
                     ? "xz"
                     : "yz";
 
-            let geneList = []
-            
-            for(let g of genes){
-                let gene = new Gene(g, "immunity")
-                geneList.push(gene)
+            let geneList = [];
+
+            for (let g of genes) {
+                let gene = new Gene(g, "immunity");
+                geneList.push(gene);
             }
 
-            let plant = new Plant({ x, y }, sim.rng.genrand_int(1000,4000), geneList, 0.02, 0.0000005);
+            let plant = new Plant(
+                { x, y },
+                sim.rng.genrand_int(1000, 4000),
+                geneList,
+                0.02,
+                0.0000005
+            );
             plants.push(plant);
 
             sim.plants.grid[x][y].plant = plant;
@@ -268,25 +280,16 @@ const fusarium = (config) => {
             }
 
             new_fungi.push(fungus);
-
-            if (sim.rng.random() > config.branch_chance) {
-                return;
-            }
-
-            let branch = fungus.branch();
-            if (branch) {
-                sim.fusoxy.grid[branch.x][branch.y].fungus = fungus;
-                sim.fusoxy.grid[branch.x][branch.y].colour = fungus.colour;
-                new_tips.push(branch);
-            }
         });
-
         tips = shuffle(tips, sim.rng);
 
         tips.forEach((tip) => {
-            if (tip.parent.resource <= 0) return;
-            if (tip.grow(sim.fusoxy)) {
+            if (tip.grow()) {
                 new_tips.push(tip);
+            }
+
+            if(sim.rng.random() < sim.config.branch_chance){
+                new_tips.push(tip.branch())
             }
         });
 
@@ -406,7 +409,10 @@ const fusarium = (config) => {
     };
 
     sim.field.update = function () {
-        if (sim.time % sim.config.year_len == 0) {
+        if (
+            sim.time % sim.config.year_len == 0 &&
+            typeof process === "object"
+        ) {
             let plantOut = "";
 
             plants.forEach((p) => {

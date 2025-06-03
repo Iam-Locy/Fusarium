@@ -30,27 +30,33 @@ export class Node {
         this.id = genID.next().value;
         this.parent = undefined;
         this.children = [];
-        this.pos = pos
+        this.pos = pos;
     }
 
     addChild(node) {
         if (this.children.includes(node)) {
             return false;
         }
-        
 
         if (node.parent) {
             return false;
         }
 
         this.children.push(node);
-        node.parent = this
+        node.parent = this;
 
         return true;
     }
 
     removeChild(id) {
-        const filtered = this.children.filter((c) => c.id !== id);
+        const filtered = this.children.filter((c) => {
+            if (c.id !== id) {
+                return true;
+            } else {
+                c.parent = undefined;
+                return false;
+            }
+        });
 
         if (filtered.length !== this.children.length) {
             this.children = filtered;

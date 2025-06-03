@@ -3,7 +3,12 @@ import { sim } from "./main.js";
 import { Node } from "./tree.js";
 
 export default class Tip extends Node {
-    constructor(pos, direction, fungus, speed = 1) {
+    constructor(
+        pos,
+        fungus,
+        direction = sim.rng.random() * 2 * Math.PI,
+        speed = sim.config.tip_speed
+    ) {
         super(pos);
         this.fungus = fungus;
         this.direction = direction;
@@ -26,7 +31,7 @@ export default class Tip extends Node {
 
         drawLine(
             sim.fusoxy,
-            ["fungus", "colour"],
+            ["fungi", "colour"],
             [this.fungus, this.fungus.colour],
             this.pos,
             newPos
@@ -34,5 +39,21 @@ export default class Tip extends Node {
 
         this.pos = newPos_wrapped;
         return true;
+    }
+
+    branch() {
+
+        let branchNode = new Node(this.pos);
+
+        this.parent.addChild(branchNode);
+
+        this.parent.removeChild(this.id);
+
+        let newTip = new Tip(branchNode.pos, this.fungus);
+
+        branchNode.addChild(newTip);
+        branchNode.addChild(this);
+
+        return newTip;
     }
 }

@@ -1,140 +1,40 @@
 import Tip from "./tip.js";
 import { idGenerator, sample, wrap } from "./util.js";
 import { sim } from "./main.js";
+import { Node, Tree } from "./tree.js";
+import { Genome } from "./genome.js";
 
 const genID = idGenerator();
 
 export default class Fungus {
-    constructor(colour, genome, resource, uptake, upkeep, parent) {
+    constructor(pos, colour, genes, resource, uptake, upkeep) {
         this.id = genID.next().value;
         this.colour = colour;
-        this.hypha = [];
+        this.genome = new Genome(genes.core, genes.mobile);
+        this.resources = {
+            amount: resource,
+            uptake: uptake,
+            upkeep: upkeep,
+        };
         this.tips = [];
+        this.hypha = this.placeHypha(pos);
         this.hosts = [];
-        this.genome = genome;
-        this.uptake = uptake;
-        this.upkeep = upkeep;
-        this.resource = resource;
         this.connectedTo = [];
-        this.parent = parent;
     }
 
-    addTip(x, y, direction) {
-        const tip = new Tip(x, y, direction, this);
+    placeHypha(pos) {
+        let hypha = new Tree(new Node(pos));
 
+        let tip = new Tip(pos, this);
+
+        hypha.root.addChild(tip);
         this.tips.push(tip);
-        this.hypha.push([tip.x, tip.y]);
-        return tip;
-    }
 
-    branch() {
-        let branchPoint =
-            this.hypha[sim.rng.genrand_int(0, this.hypha.length - 1)];
-
-        let neighbours = [];
-
-        for (let i = 0; i < 4; i++) {
-            let rotation =
-                NEIGHBOUR_VECTORS[i].rotation +
-                [1, -1][sim.rng.genrand_int(0, 1)] *
-                    (sim.rng.random() * Math.PI);
-
-            let vector = {
-                x: branchPoint[0] + NEIGHBOUR_VECTORS[i].x,
-                y: branchPoint[1] + NEIGHBOUR_VECTORS[i].y,
-                rotation: (rotation + 2 * Math.PI) % (2 * Math.PI),
-            };
-
-            vector = { ...wrap(vector), rotation: vector.rotation };
-
-            let plantVec = {
-                x: Math.floor(vector.x / sim.config.plant_scale),
-                y: Math.floor(vector.y / sim.config.plant_scale),
-            };
-
-            let plant = sim.field.grid[plantVec.x][plantVec.y].plant;
-
-            if (plant) {
-                if (
-                    !this.hosts.find((host) => {
-                        return host == plant;
-                    })
-                ) {
-                    let canInvade = false;
-
-                    Object.keys(this.genome.core).forEach((key) => {
-                        if (this.genome.core[key] == "toxin") {
-                            if (!plant.genome.includes(key)) canInvade = true;
-                        }
-                    });
-
-                    Object.keys(this.genome.mobile).forEach((key) => {
-                        if (this.genome.mobile[key] == "toxin") {
-                            if (!plant.genome.includes(key)) canInvade = true;
-                        }
-                    });
-
-                    if (canInvade) {
-                        this.hosts.push(plant);
-                    }
-                }
-            }
-
-            let neighbour = sim.fusoxy.getGridpoint(vector.x, vector.y);
-
-            if (neighbour) {
-                neighbours.push([neighbour, vector]);
-            }
-        }
-
-        neighbours = neighbours.filter((n) => {
-            return !n[0].fungus;
-        });
-
-        if (neighbours.length == 0) {
-            return;
-        }
-
-        let tip = sample(neighbours)[1];
-
-        return this.addTip(tip.x, tip.y, tip.rotation);
+        return hypha;
     }
 
     vegetative() {
-        this.hypha.forEach((h) => {
-            let plant =
-                sim.field.grid[Math.floor(h[0] / sim.config.plant_scale)][
-                    Math.floor(h[1] / sim.config.plant_scale)
-                ].plant;
-
-            if (plant) {
-                if (
-                    this.hosts.find((host) => {
-                        return host == plant;
-                    })
-                    
-                ) {
-                    this.resource = this.resource + this.uptake;
-
-                    plant.resource -= this.uptake;
-                    if (
-                        plant.resource / (plant.production / plant.upkeep) <
-                            0.1 ||
-                        isNaN(plant.resource)
-                    ) {
-                        plant.die();
-                    }
-                }
-
-                this.resource +=
-                    (plant.resource ** 2 * plant.upkeep) /
-                    sim.config.plant_scale;
-            }
-
-            this.resource -= this.upkeep;
-        });
-
-        return this.resource > 0;
+        return true;
     }
 
     getSpore(nSpores) {
@@ -191,7 +91,7 @@ export default class Fungus {
 
         //console.log(newGenome.core.a, "after")
 
-        colour = colour.join("")
+        colour = colour.join("");
 
         let spore = new Fungus(
             colour == "" ? "none" : colour,
@@ -266,9 +166,9 @@ export default class Fungus {
             if (gene == "z") colour[2] = "z";
         });
 
-        colour = colour.join("")
+        colour = colour.join("");
 
-        this.colour = colour == "" ? "none" : colour
+        this.colour = colour == "" ? "none" : colour;
     }
 }
 
