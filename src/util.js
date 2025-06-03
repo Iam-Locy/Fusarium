@@ -108,12 +108,19 @@ export function drawLine(model, props, values, start, end) {
             let y = start.y + i * m;
 
             let ivec1 = wrap(new Vector(Math.floor(x), Math.floor(y)));
-
             let ivec2 = wrap(new Vector(ivec1.x, ivec1.y + 1));
 
+            let cell1 = model.grid[ivec1.x][ivec1.y];
+            let cell2 = model.grid[ivec2.x][ivec2.y];
+
             for (let p = 0; p < props.length; p++) {
-                model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
-                model.grid[ivec2.x][ivec2.y][props[p]] = values[p];
+                if (cell1[props[p]] instanceof Set) {
+                    cell1[props[p]].add(values[p]);
+                    cell2[props[p]].add(values[p]);
+                } else {
+                    cell1[props[p]] = values[p];
+                    cell2[props[p]] = values[p];
+                }
             }
         }
     } else {
@@ -134,9 +141,17 @@ export function drawLine(model, props, values, start, end) {
 
             let ivec2 = wrap(new Vector(ivec1.x + 1, ivec1.y));
 
+            let cell1 = model.grid[ivec1.x][ivec1.y];
+            let cell2 = model.grid[ivec2.x][ivec2.y];
+
             for (let p = 0; p < props.length; p++) {
-                model.grid[ivec1.x][ivec1.y][props[p]] = values[p];
-                model.grid[ivec2.x][ivec2.y][props[p]] = values[p];
+                if (cell1[props[p]] instanceof Set) {
+                    cell1[props[p]].add(values[p]);
+                    cell2[props[p]].add(values[p]);
+                } else {
+                    cell1[props[p]] = values[p];
+                    cell2[props[p]] = values[p];
+                }
             }
         }
     }
@@ -178,14 +193,36 @@ export function drawSpot(model, props, values, r, pos) {
         }
 
         for (let i = 0; i < props.length; i++) {
-            for (let delta = -x; delta <= x; delta++) {
-                model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
-                model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
-            }
+            let cell = model.grid[pos.x + delta][pos.y + y];
 
-            for (let delta = -y; delta >= y; delta--) {
-                model.grid[pos.x + delta][pos.y + x][props[i]] = values[i];
-                model.grid[pos.x + delta][pos.y - x][props[i]] = values[i];
+            if (cell[props[i]] instanceof Set) {
+                for (let delta = -x; delta <= x; delta++) {
+                    model.grid[pos.x + delta][pos.y + y][props[i]].add(
+                        values[i]
+                    );
+                    model.grid[pos.x + delta][pos.y - y][props[i]].add(
+                        values[i]
+                    );
+                }
+
+                for (let delta = -y; delta >= y; delta--) {
+                    model.grid[pos.x + delta][pos.y + x][props[i]].add(
+                        values[i]
+                    );
+                    model.grid[pos.x + delta][pos.y - x][props[i]].add(
+                        values[i]
+                    );
+                }
+            } else {
+                for (let delta = -x; delta <= x; delta++) {
+                    model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
+                    model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
+                }
+
+                for (let delta = -y; delta >= y; delta--) {
+                    model.grid[pos.x + delta][pos.y + x][props[i]] = values[i];
+                    model.grid[pos.x + delta][pos.y - x][props[i]] = values[i];
+                }
             }
         }
 
@@ -205,5 +242,17 @@ export class Vector {
         let y = Math.round(vector.y);
 
         return new Vector(x, y);
+    }
+
+    static add(vec1, vec2) {
+        return new Vector(vec1.x + vec2.x, vec1.y + vec2.y);
+    }
+
+    static substract(vec1, vec2) {
+        return new Vector(vec1.x - vec2.x, vec1.y - vec2.y);
+    }
+
+    static multiply(vec, num) {
+        return new Vector(vec.x * num, vec.y * num);
     }
 }
