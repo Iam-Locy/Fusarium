@@ -89,9 +89,9 @@ export function drawLine(model, props, values, start, end) {
         values = [values];
     }
 
-    start = new Vector(Math.round(start.x), Math.round(start.y));
+    start = Vector.rounded(start);
 
-    end = new Vector(Math.round(end.x), Math.round(end.y));
+    end = Vector.rounded(end);
 
     if (Math.abs(end.y - start.y) < Math.abs(end.x - start.x)) {
         if (end.x < start.x) {
@@ -100,15 +100,15 @@ export function drawLine(model, props, values, start, end) {
             end = temp;
         }
 
-        let vector = new Vector(end.x - start.x, end.y - start.y);
-        let m = vector.x !== 0 ? vector.y / vector.x : 1;
+        let dist = new Vector(end.x - start.x, end.y - start.y);
+        let m = dist.x !== 0 ? dist.y / dist.x : 1;
 
-        for (let i = 0; i < Math.floor(vector.x) + 1; i++) {
+        for (let i = 0; i < Math.floor(dist.x) + 1; i++) {
             let x = start.x + i;
             let y = start.y + i * m;
 
-            let ivec1 = wrap(new Vector(Math.floor(x), Math.floor(y)));
-            let ivec2 = wrap(new Vector(ivec1.x, ivec1.y + 1));
+            let ivec1 = wrap(Vector.floored(new Vector(x, y)));
+            let ivec2 = wrap(Vector.floored(new Vector(ivec1.x, ivec1.y + 1)));
 
             let cell1 = model.grid[ivec1.x][ivec1.y];
             let cell2 = model.grid[ivec2.x][ivec2.y];
@@ -130,16 +130,15 @@ export function drawLine(model, props, values, start, end) {
             end = temp;
         }
 
-        let vector = { x: end.x - start.x, y: end.y - start.y };
-        let m = vector.y !== 0 ? vector.x / vector.y : 1;
+        let dist = { x: end.x - start.x, y: end.y - start.y };
+        let m = dist.y !== 0 ? dist.x / dist.y : 1;
 
-        for (let i = 0; i < Math.floor(vector.y) + 1; i++) {
+        for (let i = 0; i < Math.floor(dist.y) + 1; i++) {
             let x = start.x + i * m;
             let y = start.y + i;
 
-            let ivec1 = wrap(new Vector(Math.floor(x), Math.floor(y)));
-
-            let ivec2 = wrap(new Vector(ivec1.x + 1, ivec1.y));
+            let ivec1 = wrap(Vector.floored(new Vector(x, y)));
+            let ivec2 = wrap(Vector.floored(new Vector(ivec1.x + 1, ivec1.y)));
 
             let cell1 = model.grid[ivec1.x][ivec1.y];
             let cell2 = model.grid[ivec2.x][ivec2.y];
@@ -193,33 +192,32 @@ export function drawSpot(model, props, values, r, pos) {
         }
 
         for (let i = 0; i < props.length; i++) {
-            let cell = model.grid[pos.x + delta][pos.y + y];
+            for (let delta = -x; delta <= x; delta++) {
+                let cell = model.grid[pos.x + delta][pos.y + y];
 
-            if (cell[props[i]] instanceof Set) {
-                for (let delta = -x; delta <= x; delta++) {
+                if (cell[props[i]] instanceof Set) {
                     model.grid[pos.x + delta][pos.y + y][props[i]].add(
                         values[i]
                     );
                     model.grid[pos.x + delta][pos.y - y][props[i]].add(
                         values[i]
                     );
+                } else {
+                    model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
+                    model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
                 }
+            }
 
-                for (let delta = -y; delta >= y; delta--) {
+            for (let delta = -y; delta >= y; delta--) {
+                let cell = model.grid[pos.x + delta][pos.y + y];
+                if (cell[props[i]] instanceof Set) {
                     model.grid[pos.x + delta][pos.y + x][props[i]].add(
                         values[i]
                     );
                     model.grid[pos.x + delta][pos.y - x][props[i]].add(
                         values[i]
                     );
-                }
-            } else {
-                for (let delta = -x; delta <= x; delta++) {
-                    model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
-                    model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
-                }
-
-                for (let delta = -y; delta >= y; delta--) {
+                } else {
                     model.grid[pos.x + delta][pos.y + x][props[i]] = values[i];
                     model.grid[pos.x + delta][pos.y - x][props[i]] = values[i];
                 }
@@ -240,6 +238,13 @@ export class Vector {
     static rounded(vector) {
         let x = Math.round(vector.x);
         let y = Math.round(vector.y);
+
+        return new Vector(x, y);
+    }
+
+    static floored(vector) {
+        let x = Math.floor(vector.x);
+        let y = Math.floor(vector.y);
 
         return new Vector(x, y);
     }
