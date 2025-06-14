@@ -1,9 +1,8 @@
 import Tip from "./tip.js";
-import { idGenerator, sample, wrap } from "./util.js";
+import { clamp, drawSpot, idGenerator, sample, Vector, wrap } from "./util.js";
 import { sim } from "./main.js";
 import { Node, Tree } from "./tree.js";
 import { Genome } from "./genome.js";
-import { Gene } from "./genome.js";
 
 const genID = idGenerator();
 
@@ -11,7 +10,7 @@ export default class Fungus {
     constructor(pos, colour, genes, resource, uptake, upkeep) {
         this.id = genID.next().value;
         this.colour = colour;
-        this.genome = new Genome(genes.core, genes.mobile);
+        this.genome = new Genome(genes.core, genes.acc);
         this.resources = {
             amount: resource,
             uptake: uptake,
@@ -19,8 +18,8 @@ export default class Fungus {
         };
         this.tips = [];
         this.hypha = this.placeHypha(pos);
-        this.hosts = [];
-        this.connectedTo = [];
+        this.hosts = new Set([]);
+        this.connectedTo = new Set([]);
     }
 
     placeHypha(pos) {
@@ -31,80 +30,108 @@ export default class Fungus {
         hypha.root.addChild(tip);
         this.tips.push(tip);
 
+        sim.field.grid[pos.x][pos.y].fungi.add(this);
+        sim.field.grid[pos.x][pos.y].colour = this.colour;
+
         return hypha;
     }
 
     vegetative() {
-        
-        return true;
+        for (let node of this.hypha.preOrderTraversal()) {
+            let pos = Vector.floored(node.pos);
+            let localFood = sim.field.grid[pos.x][pos.y].food;
+
+            this.resources.amount += clamp(0, localFood, this.resources.uptake);
+            this.resources.amount -= this.resources.upkeep;
+
+            sim.field.grid[pos.x][pos.y].food -= clamp(
+                0,
+                localFood,
+                this.resources.uptake
+            );
+
+            let plant = sim.field.grid[pos.x][pos.y].plant;
+
+            if (plant) {
+                if (this.hosts.has(plant)) {
+                    this.resources.amount += clamp(
+                        0,
+                        plant.resources.amount,
+                        this.resources.uptake
+                    );
+                    plant.resources.amount -= clamp(
+                        0,
+                        plant.resources.amount,
+                        this.resources.uptake
+                    );
+                }
+            }
+        }
+
+        return this.resources.amount > 0;
     }
 
-    getSpore(nSpores) {
-        let newGenome = {
-            core: { ...this.genome.core },
-            mobile: { ...this.genome.mobile },
-        };
-
-        this.geneLoss(newGenome.core);
-        this.geneGain(newGenome.core);
-
-        if (Object.keys(this.genome.mobile).length > 0) {
-            this.cutNpaste(newGenome.core, newGenome.mobile);
-            this.cutNpaste(newGenome.mobile, newGenome.core);
-            this.geneLoss(newGenome.mobile);
-            this.geneGain(newGenome.mobile);
+    getContacts() {
+        for (let node of this.hypha.preOrderTraversal()) {
+            let pos = Vector.rounded(node.pos);
+            sim.field.grid[pos.x][pos.y].fungi.forEach((fungus) => {
+                if (fungus.id != this.id) {
+                    this.connectedTo.add(fungus);
+                    fungus.connectedTo.add(this);
+                }
+            });
         }
+    }
 
-        // #console.log(newGenome.core.a)
-        if (
-            newGenome.core.a === undefined &&
-            newGenome.mobile.a === undefined
-        ) {
-            return false;
-        }
+    getSpore(pos, nSpores) {
+        let newGenome = new Genome([...this.genome.core], [...this.genome.acc]);
 
-        if (
-            newGenome.core.b === undefined &&
-            newGenome.mobile.b === undefined
-        ) {
-            return false;
-        }
+        newGenome.core = Genome.geneLoss(newGenome.core);
+        newGenome.core = Genome.geneGain(newGenome.core);
 
-        if (
-            newGenome.core.c === undefined &&
-            newGenome.mobile.c === undefined
-        ) {
-            return false;
+        if (newGenome.acc.length > 0) {
+            [newGenome.core, newGenome.acc] = Genome.cutNPaste(
+                newGenome.core,
+                newGenome.acc
+            )[(newGenome.acc, newGenome.core)] = Genome.cutNPaste(
+                newGenome.acc,
+                newGenome.core
+            );
+            newGenome.acc = Genome.geneLoss(newGenome.acc);
+            newGenome.acc = Genome.geneGain(newGenome.acc);
         }
 
         let colour = ["", "", ""];
 
-        Object.keys(newGenome.core).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
+        newGenome.core.forEach((gene) => {
+            if (gene.name == "x") colour[0] = "x";
+            if (gene.name == "y") colour[1] = "y";
+            if (gene.name == "z") colour[2] = "z";
         });
 
-        Object.keys(newGenome.mobile).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
+        newGenome.acc.forEach((gene) => {
+            if (gene.name == "x") colour[0] = "x";
+            if (gene.name == "y") colour[1] = "y";
+            if (gene.name == "z") colour[2] = "z";
         });
 
         //console.log(newGenome.core.a, "after")
 
         colour = colour.join("");
 
+        if (!newGenome.hasGenes("a", "b", "c")) {
+            return false;
+        }
+
         let spore = new Fungus(
+            pos,
             colour == "" ? "none" : colour,
             newGenome,
-            1000,
-            this.uptake,
-            this.upkeep,
-            this.id
+            this.resources.amount / nSpores,
+            this.resources.uptake,
+            this.resources.upkeep
         );
 
-        //console.log(spore.genome)
         return spore;
     }
 }

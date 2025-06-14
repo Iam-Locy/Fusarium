@@ -25,12 +25,34 @@ export default class Tip extends Node {
             this.pos.y + this.step.y + (sim.rng.random() - 0.5)
         );
 
-        let newPos_wrapped = wrap(newPos);
+        let newPos_wrapped = wrap(Vector.rounded(newPos));
 
         if (!newPos_wrapped.isInBounds) return false;
 
+        let plant = sim.field.grid[newPos_wrapped.x][newPos_wrapped.y].plant;
+
+        if (plant) {
+            let pathoGenes = [];
+
+            for (let gene of this.fungus.genome.core) {
+                if (gene.type == "pathogenicity") {
+                    pathoGenes.push(gene.name);
+                }
+            }
+
+            for (let gene of this.fungus.genome.acc) {
+                if (gene.type == "pathogenicity") {
+                    pathoGenes.push(gene.name);
+                }
+            }
+
+            if (!plant.genome.hasGenes(pathoGenes) && pathoGenes.length > 0) {
+                this.fungus.hosts.add(plant);
+            }
+        }
+
         drawLine(
-            sim.fusoxy,
+            sim.field,
             ["fungi", "colour"],
             [this.fungus, this.fungus.colour],
             this.pos,
@@ -42,7 +64,6 @@ export default class Tip extends Node {
     }
 
     branch() {
-
         let branchNode = new Node(this.pos);
 
         this.parent.addChild(branchNode);
@@ -53,6 +74,9 @@ export default class Tip extends Node {
 
         branchNode.addChild(newTip);
         branchNode.addChild(this);
+
+        this.fungus.tips.push(newTip);
+        let pos = Vector.floored(newTip.pos);
 
         return newTip;
     }

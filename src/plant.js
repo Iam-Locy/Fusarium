@@ -22,7 +22,9 @@ export default class Plant {
             this.resources.amount /
                 (this.resources.production / this.resources.upkeep)
         );
+
         this.rootSystem = this.placePlant();
+        this.releaseFood(20)
         this.drawPlant();
     }
 
@@ -42,31 +44,25 @@ export default class Plant {
             this.resources.amount * this.resources.production -
             this.resources.amount ** 2 * this.resources.upkeep;
 
-        if (
-            this.resources.amount /
-                (this.resources.production / this.resources.upkeep) <
-                0.1 ||
-            isNaN(this.resources.amount)
-        ) {
-            this.die;
-        }
-
         this.health = clamp(
             0,
             1,
             this.resources.amount /
                 (this.resources.production / this.resources.upkeep)
         );
+
         this.drawPlant();
         return this.resources.amount;
     }
 
     die() {
-        this.resource = 0;
+        this.resources.amount = 0;
+        this.health = 0;
+
+        this.releaseFood(0)
+
+        this.drawPlant();
         sim.plants.grid[this.pos.x][this.pos.y].plant = null;
-        sim.field.grid[2 * this.pos.x + 1][2 * this.pos.y + 1].plant = null;
-        sim.field.grid[2 * this.pos.x + 1][2 * this.pos.y + 1].health = 0;
-        sim.field.grid[2 * this.pos.x + 1][2 * this.pos.y + 1].pColour = null;
     }
 
     placePlant() {
@@ -115,6 +111,9 @@ export default class Plant {
                 layer_1_node.addChild(layer_2_node);
             }
         }
+
+        sim.plants.grid[this.pos.x][this.pos.y].plant = this;
+
         return root;
     }
 
@@ -123,7 +122,7 @@ export default class Plant {
             drawSpot(
                 sim.field,
                 ["health", "plant"],
-                [this.health, this],
+                [this.health, this.health > 0 ? this : null],
                 3,
                 node.pos
             );
@@ -139,6 +138,12 @@ export default class Plant {
                     );
                 });
             }
+        }
+    }
+
+    releaseFood(amount){
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(sim.field, ["food"], [amount], 10, node.pos);
         }
     }
 }
