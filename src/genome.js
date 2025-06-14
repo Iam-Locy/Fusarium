@@ -40,7 +40,7 @@ export class Genome {
         let newChr = [...chr];
 
         for (let i = 0; i < chr.length; i++) {
-            if (sim.rng.random() < 0.01) {
+            if (sim.rng.random() < sim.config.loss_rate) {
                 newChr.splice(i, 1);
             }
         }
@@ -51,9 +51,9 @@ export class Genome {
     static geneGain(chr) {
         let newChr = [...chr];
 
-        for (let gene of Object.keys(Genome.genes)) {
-            if (sim.rng.random() < 0.01) {
-                newChr.push(new Gene(gene, Genome.genes[gene]));
+        for (let gene of Object.keys(Gene.genes)) {
+            if (sim.rng.random() < sim.config.gain_rate) {
+                newChr.push(new Gene(gene, Gene.genes[gene]));
             }
         }
 
@@ -67,16 +67,61 @@ export class Genome {
         let newGenome2 = new Genome(genome2.core, genome2.acc);
 
         if (newGenome1.acc.length > 0 && newGenome2.acc.length == 0) {
-            newGenome1.acc.forEach(gene =>{
-                newGenome2.acc.push(new Gene(gene.name, gene.type))
-            })
+            newGenome1.acc.forEach((gene) => {
+                newGenome2.acc.push(new Gene(gene.name, gene.type));
+            });
         } else if (newGenome1.acc.length == 0 && newGenome2.acc.length > 0) {
-            newGenome2.acc.forEach(gene =>{
-                newGenome1.acc.push(new Gene(gene.name, gene.type))
-            })
+            newGenome2.acc.forEach((gene) => {
+                newGenome1.acc.push(new Gene(gene.name, gene.type));
+            });
         }
 
         return [newGenome1, newGenome2];
+    }
+
+    hasGenes(genes) {
+        if (!Array.isArray(genes)) {
+            genes = [genes];
+        }
+
+        if(genes.length == 0) return false
+
+        if (this.core) {
+            genes = genes.filter((gene) => {
+                let found = false;
+
+                this.core.forEach((g) => {
+                    if (g.name == gene) found = true;
+                });
+
+                return !found;
+            });
+        }
+
+        if (this.acc) {
+            genes = genes.filter((gene) => {
+                let found = false;
+
+                this.acc.forEach((g) => {
+                    if (g.name == gene) found = true;
+                });
+
+                return !found;
+            });
+        }
+
+        if (genes.length == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+export class Gene {
+    constructor(name, type) {
+        this.name = name;
+        this.type = type;
     }
 
     static genes = {
@@ -90,11 +135,4 @@ export class Genome {
         l: "junk",
         m: "junk",
     };
-}
-
-export class Gene {
-    constructor(name, type) {
-        this.name = name;
-        this.type = type;
-    }
 }
