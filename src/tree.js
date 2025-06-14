@@ -6,6 +6,8 @@ export class Tree {
     constructor(root = new Node()) {
         this.id = genID.next().value;
         this.root = root;
+        this.root.tree = this;
+        this.nodeCount = 1;
     }
 
     *preOrderTraversal(node = this.root) {
@@ -28,6 +30,7 @@ export class Tree {
 export class Node {
     constructor(pos) {
         this.id = genID.next().value;
+        this.tree = undefined;
         this.parent = undefined;
         this.children = [];
         this.pos = pos;
@@ -44,7 +47,9 @@ export class Node {
 
         this.children.push(node);
         node.parent = this;
+        node.tree = this.tree;
 
+        this.tree.nodeCount += 1;
         return true;
     }
 
@@ -54,12 +59,15 @@ export class Node {
                 return true;
             } else {
                 c.parent = undefined;
+                c.tree = undefined;
                 return false;
             }
         });
 
         if (filtered.length !== this.children.length) {
             this.children = filtered;
+
+            this.tree.nodeCount -= 1;
             return true;
         }
 
