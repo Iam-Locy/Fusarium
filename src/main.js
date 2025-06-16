@@ -2,17 +2,17 @@ import Fungus from "./fungus.js";
 import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
-//import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
-//import yargs from "yargs";
-//import { hideBin } from "yargs/helpers";
+import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 
 // Configuration constant for the cacatoo simulation
 var config = {
     title: "Fusarium",
     description: "",
     maxtime: 100000,
-    ncol: 500,
-    nrow: 500,
+    ncol: 1000,
+    nrow: 1000,
     wrap: [true, true],
     scale: 1,
     skip: 10,
@@ -34,20 +34,23 @@ var config = {
             yz: "red",
         },
     },
-    spores: 10, //Number of starting spores
+    spores: 100, //Number of starting spores
     spore_ratio: 0.1,
-    year_len: 500,
-    branch_chance: 0.005,
-    tip_speed: 0.2,
+    year_len: 1000,
+    branch_chance: 0.0025,
+    tip_speed: 0.05,
     plant_scale: 100,
     tilling: false,
-    uptake: 100,
-    upkeep: 0.1,
+    uptake: 1,
+    upkeep: 0.5,
+    phi: 1,
     mobile_ratio: 1,
     parasite_ratio: 0.1,
-    hgt_rate: 0.05,
+    hgt_rate: 0,
+    hgt_mode: "cut",
     loss_rate: 0.0,
     gain_rate: 0.0,
+    food_decay_rate: 0.9,
 };
 
 export let sim;
@@ -206,11 +209,16 @@ const fusarium = (config) => {
         label: "Available food",
         minval: 0,
         nticks: 10,
-        maxval: 100,
+        maxval: 1000,
     });
 
     sim.field.update = () => {
+        if (sim.time % 10 == 0) {
+            decayProp(sim.field, "food", sim.config.food_decay_rate);
+        }
+
         if (sim.time % config.year_len == 0 && sim.time != 0) {
+            if (typeof process == "object") log(sim, plants, fungi);
             let new_fungi = [];
             let new_tips = [];
 
@@ -351,7 +359,6 @@ const fusarium = (config) => {
                 for (let y = 0; y < plantNrow; y++) {
                     if (newPlantGrid[y][x]) {
                         sim.plants.grid[x][y].plant = newPlantGrid[y][x];
-                        sim.plants.grid[x][y].plant.releaseFood(20);
                     } else {
                         sim.plants.grid[x][y].plant = null;
                     }
@@ -375,17 +382,6 @@ const fusarium = (config) => {
             sim.time % sim.config.year_len == 0 &&
             typeof process === "object"
         ) {
-            let plantOut = "";
-
-            plants.forEach((p) => {
-                plantOut += `${p.genome},${p.resource}\t`;
-            });
-
-            sim.write_append(
-                `${plantOut}\n`,
-                `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_loss_${sim.config.loss_rate}_hgt_${sim.config.hgt_rate}_parasite_${sim.config.parasite_ratio}_mobile_${sim.config.mobile_ratio}_plants.txt`
-            );
-
             let fungusOut = "";
 
             fungi.forEach((f) => {
@@ -405,6 +401,58 @@ const fusarium = (config) => {
     }; */
 
     sim.start();
+};
+
+const decayProp = (model, property, rate) => {
+    for (let x = 0; x < model.nc; x++) {
+        for (let y = 0; y < model.nr; y++) {
+            model.grid[x][y][property] *= rate;
+        }
+    }
+};
+
+const log = (sim, plants, fungi) => {
+    let plantOut = "";
+
+    plants.forEach((p) => {
+        let genome = "";
+        p.genome.core.forEach((g) => (genome += g.name));
+        plantOut += `${genome},${p.resources.amount}\t`;
+    });
+
+    sim.write_append(
+        `${plantOut}\n`,
+        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_plants.txt`
+    );
+
+    let fungusOut = "";
+
+    fungi.forEach((f) => {
+        let genomeC = "";
+        f.genome.core.forEach((g) => (genomeC += g.name));
+
+        let genomeA = "";
+        f.genome.acc.forEach((g) => (genomeA += g.name));
+        fungusOut += `${f.id},C:${genomeC},A:${genomeA},${f.hosts.size}\t`;
+    });
+
+    sim.write_append(
+        `${fungusOut}\n`,
+        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_fungi.txt`
+    );
+
+    let foodOut = 0;
+
+    for (let x = 0; x < sim.field.nc; x++) {
+        for (let y = 0; y < sim.field.nr; y++) {
+            foodOut += sim.field.grid[x][y].food;
+        }
+    }
+
+    sim.write_append(
+        `${foodOut}\n`,
+        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_food.txt`
+    );
 };
 
 // Run the simulation

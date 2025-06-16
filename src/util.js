@@ -156,7 +156,7 @@ export function drawLine(model, props, values, start, end) {
     }
 }
 
-export function drawSpot(model, props, values, r, pos) {
+export function drawSpot(grid, props, values, r, pos) {
     if (!Array.isArray(props)) {
         props = [props];
     }
@@ -193,33 +193,33 @@ export function drawSpot(model, props, values, r, pos) {
 
         for (let i = 0; i < props.length; i++) {
             for (let delta = -x; delta <= x; delta++) {
-                let cell = model.grid[pos.x + delta][pos.y + y];
+                let cell = grid[pos.x + delta][pos.y + y];
 
                 if (cell[props[i]] instanceof Set) {
-                    model.grid[pos.x + delta][pos.y + y][props[i]].add(
+                    grid[pos.x + delta][pos.y + y][props[i]].add(
                         values[i]
                     );
-                    model.grid[pos.x + delta][pos.y - y][props[i]].add(
+                    grid[pos.x + delta][pos.y - y][props[i]].add(
                         values[i]
                     );
                 } else {
-                    model.grid[pos.x + delta][pos.y + y][props[i]] = values[i];
-                    model.grid[pos.x + delta][pos.y - y][props[i]] = values[i];
+                    grid[pos.x + delta][pos.y + y][props[i]] = values[i];
+                    grid[pos.x + delta][pos.y - y][props[i]] = values[i];
                 }
             }
 
             for (let delta = -y; delta >= y; delta--) {
-                let cell = model.grid[pos.x + delta][pos.y + y];
+                let cell = grid[pos.x + delta][pos.y + y];
                 if (cell[props[i]] instanceof Set) {
-                    model.grid[pos.x + delta][pos.y + x][props[i]].add(
+                    grid[pos.x + delta][pos.y + x][props[i]].add(
                         values[i]
                     );
-                    model.grid[pos.x + delta][pos.y - x][props[i]].add(
+                    grid[pos.x + delta][pos.y - x][props[i]].add(
                         values[i]
                     );
                 } else {
-                    model.grid[pos.x + delta][pos.y + x][props[i]] = values[i];
-                    model.grid[pos.x + delta][pos.y - x][props[i]] = values[i];
+                    grid[pos.x + delta][pos.y + x][props[i]] = values[i];
+                    grid[pos.x + delta][pos.y - x][props[i]] = values[i];
                 }
             }
         }

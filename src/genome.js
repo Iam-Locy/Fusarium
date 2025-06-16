@@ -70,10 +70,18 @@ export class Genome {
             newGenome1.acc.forEach((gene) => {
                 newGenome2.acc.push(new Gene(gene.name, gene.type));
             });
+
+            if(sim.config.hgt_mode == "cut"){
+                newGenome1.acc = []
+            }
         } else if (newGenome1.acc.length == 0 && newGenome2.acc.length > 0) {
             newGenome2.acc.forEach((gene) => {
                 newGenome1.acc.push(new Gene(gene.name, gene.type));
             });
+
+            if(sim.config.hgt_mode == "cut"){
+                newGenome2.acc = []
+            }
         }
 
         return [newGenome1, newGenome2];

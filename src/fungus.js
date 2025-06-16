@@ -57,12 +57,12 @@ export default class Fungus {
                     this.resources.amount += clamp(
                         0,
                         plant.resources.amount,
-                        this.resources.uptake
+                        this.resources.uptake* sim.config.phi 
                     );
                     plant.resources.amount -= clamp(
                         0,
                         plant.resources.amount,
-                        this.resources.uptake
+                        this.resources.uptake * sim.config.phi
                     );
                 }
             }
@@ -127,7 +127,7 @@ export default class Fungus {
             pos,
             colour == "" ? "none" : colour,
             newGenome,
-            this.resources.amount / nSpores,
+            clamp(0, 200, this.resources.amount / nSpores),
             this.resources.uptake,
             this.resources.upkeep
         );
