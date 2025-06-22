@@ -2,17 +2,17 @@ import Fungus from "./fungus.js";
 import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
-import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
+import { hideBin } from "yargs/helpers"; */
 
 // Configuration constant for the cacatoo simulation
 var config = {
     title: "Fusarium",
     description: "",
     maxtime: 100000,
-    ncol: 1000,
-    nrow: 1000,
+    ncol: 300,
+    nrow: 300,
     wrap: [true, true],
     scale: 1,
     skip: 10,
@@ -36,16 +36,16 @@ var config = {
     },
     spores: 100, //Number of starting spores
     spore_ratio: 0.1,
-    year_len: 1000,
-    branch_chance: 0.0025,
-    tip_speed: 0.05,
+    year_len: 500,
+    branch_chance: 0.005,
+    tip_speed: 0.1,
     plant_scale: 100,
     tilling: false,
-    uptake: 1,
+    uptake: 10,
     upkeep: 0.5,
     phi: 1,
     mobile_ratio: 1,
-    parasite_ratio: 0.1,
+    parasite_ratio: 1,
     hgt_rate: 0,
     hgt_mode: "cut",
     loss_rate: 0.0,
@@ -217,8 +217,10 @@ const fusarium = (config) => {
             decayProp(sim.field, "food", sim.config.food_decay_rate);
         }
 
+        if (sim.time % config.year_len == 0 && typeof process == "object")
+            log(sim, plants, fungi);
+
         if (sim.time % config.year_len == 0 && sim.time != 0) {
-            if (typeof process == "object") log(sim, plants, fungi);
             let new_fungi = [];
             let new_tips = [];
 
@@ -364,41 +366,24 @@ const fusarium = (config) => {
                     }
                 }
             }
+        } else {
+            plants.forEach((plant) => {
+                if (
+                    plant.resources.amount < 0.1 ||
+                    isNaN(plant.resources.amount)
+                ) {
+                    plant.die();
+                } else {
+                    plant.vegetative();
+                    newPlants.push(plant);
+                }
+            });
         }
 
-        plants.forEach((plant) => {
-            if (plant.resources.amount < 0.1 || isNaN(plant.resources.amount)) {
-                plant.die();
-            } else {
-                plant.vegetative();
-                newPlants.push(plant);
-            }
-        });
+        console.log(newPlants.length)
+
         plants = newPlants;
     };
-
-    /* sim.field.update = function () {
-        if (
-            sim.time % sim.config.year_len == 0 &&
-            typeof process === "object"
-        ) {
-            let fungusOut = "";
-
-            fungi.forEach((f) => {
-                let genomeC = "";
-                Object.keys(f.genome.core).forEach((g) => (genomeC += g));
-
-                let genomeM = "";
-                Object.keys(f.genome.mobile).forEach((g) => (genomeM += g));
-                fungusOut += `${f.id},C:${genomeC},M:${genomeM},${f.uptake},${f.hosts.length},${f.parent}\t`;
-            });
-
-            sim.write_append(
-                `${fungusOut}\n`,
-                `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_loss_${sim.config.loss_rate}_hgt_${sim.config.hgt_rate}_parasite_${sim.config.parasite_ratio}_mobile_${sim.config.mobile_ratio}_fungi.txt`
-            );
-        }
-    }; */
 
     sim.start();
 };
