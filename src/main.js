@@ -1,18 +1,18 @@
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { sample, shuffle, Vector } from "./util.js";
+import { drawSpot, sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 /* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
-import { hideBin } from "yargs/helpers"; */
-
+import { hideBin } from "yargs/helpers";
+ */
 // Configuration constant for the cacatoo simulation
 var config = {
     title: "Fusarium",
     description: "",
     maxtime: 100000,
-    ncol: 300,
-    nrow: 300,
+    ncol: 1000,
+    nrow: 1000,
     wrap: [true, true],
     scale: 1,
     skip: 10,
@@ -28,26 +28,24 @@ var config = {
             yz: "green",
             xyz: "white",
         },
-        pColour: {
-            xy: "yellow",
-            xz: "blue",
-            yz: "red",
+        food: {
+            1: "white",  
         },
     },
-    spores: 100, //Number of starting spores
+    spores: 1, //Number of starting spores
     spore_ratio: 0.1,
-    year_len: 500,
+    year_len: 10000,
     branch_chance: 0.005,
-    tip_speed: 0.1,
+    tip_speed: 0.2,
     plant_scale: 100,
     tilling: false,
     uptake: 10,
-    upkeep: 0.5,
-    phi: 1,
+    upkeep: 0.25,
+    phi: 4,
     mobile_ratio: 1,
-    parasite_ratio: 1,
-    hgt_rate: 0,
-    hgt_mode: "cut",
+    parasite_ratio: 0.1,
+    hgt_rate: 0.1,
+    hgt_mode: "copy",
     loss_rate: 0.0,
     gain_rate: 0.0,
     food_decay_rate: 0.9,
@@ -181,6 +179,8 @@ const fusarium = (config) => {
                 0.000005
             );
 
+            drawSpot(sim.field.grid, "food", 1, 30, plant.center)
+
             plants.push(plant);
         }
     }
@@ -202,25 +202,17 @@ const fusarium = (config) => {
         maxval: 1,
     });
 
-    sim.field.colourViridis("food", 100);
-    sim.createDisplay_continuous({
-        model: "field",
-        property: "food",
-        label: "Available food",
-        minval: 0,
-        nticks: 10,
-        maxval: 1000,
-    });
+    sim.createDisplay("field", "food", "Available resources")
 
     sim.field.update = () => {
-        if (sim.time % 10 == 0) {
-            decayProp(sim.field, "food", sim.config.food_decay_rate);
-        }
+        /*console.log(sim.time)
+        sim.field.plotArray( ["Number"],[tips.length], ["red"], "Tips")
+        sim.field.plotArray( ["Number"],[fungi.length], ["blue"], "Fungi") */
 
-        if (sim.time % config.year_len == 0 && typeof process == "object")
+        if (sim.time % sim.config.year_len == 0 && typeof process == "object")
             log(sim, plants, fungi);
 
-        if (sim.time % config.year_len == 0 && sim.time != 0) {
+        if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
             let new_fungi = [];
             let new_tips = [];
 
@@ -379,8 +371,6 @@ const fusarium = (config) => {
                 }
             });
         }
-
-        console.log(newPlants.length)
 
         plants = newPlants;
     };

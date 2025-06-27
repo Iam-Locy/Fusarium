@@ -70,7 +70,11 @@ export default class Tip extends Node {
 
         this.parent.removeChild(this.id);
 
-        let newTip = new Tip(branchNode.pos, this.fungus);
+        let newTip = new Tip(
+            branchNode.pos,
+            this.fungus,
+            this.direction + (sim.rng.random() - 0.5) * (Math.PI / 2)
+        );
 
         branchNode.addChild(newTip);
         branchNode.addChild(this);

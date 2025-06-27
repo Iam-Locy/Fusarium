@@ -39,16 +39,9 @@ export default class Fungus {
     vegetative() {
         for (let node of this.hypha.preOrderTraversal()) {
             let pos = Vector.floored(node.pos);
-            let localFood = sim.field.grid[pos.x][pos.y].food;
-
-            this.resources.amount += clamp(0, localFood, this.resources.uptake);
+            
+            this.resources.amount += this.resources.uptake * sim.field.grid[pos.x][pos.y].food
             this.resources.amount -= this.resources.upkeep;
-
-            sim.field.grid[pos.x][pos.y].food -= clamp(
-                0,
-                localFood,
-                this.resources.uptake
-            );
 
             let plant = sim.field.grid[pos.x][pos.y].plant;
 

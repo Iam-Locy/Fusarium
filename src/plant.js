@@ -50,7 +50,6 @@ export default class Plant {
                 (this.resources.production / this.resources.upkeep)
         );
 
-        if(sim.time % 10 == 0) this.releaseFood(this.resources.amount * 0.02);
         this.drawPlant();
         return this.resources.amount;
     }
@@ -139,37 +138,7 @@ export default class Plant {
         }
     }
 
-    releaseFood(amount) {
-        let mask = new Array(sim.field.nr);
-
-        for (let x = 0; x < sim.field.nc; x++) {
-            mask[x] = new Array(sim.field.nc);
-            for (let y = 0; y < sim.field.nr; y++) {
-                mask[x][y] = { food: 0 };
-            }
-        }
-
-        for (let node of this.rootSystem.preOrderTraversal()) {
-            drawSpot(mask, ["food"], [amount], 10, node.pos);
-        }
-
-      
-        for (
-            let x = sim.config.plant_scale * this.pos.x;
-            x < sim.config.plant_scale * (this.pos.x + 1);
-            x++
-        ) {
-            for (
-                let y = sim.config.plant_scale * this.pos.y;
-                y < sim.config.plant_scale * (this.pos.y + 1);
-                y++
-            ) {
-                sim.field.grid[x][y].food += mask[x][y].food;
-            }
-        }
-
-
-    }
+    
 }
 
 class plantNode extends Node {
