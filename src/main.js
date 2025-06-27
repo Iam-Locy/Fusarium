@@ -33,8 +33,8 @@ var config = {
         },
     },
     spores: 1, //Number of starting spores
-    spore_ratio: 0.1,
-    year_len: 10000,
+    spore_ratio: 0.01,
+    year_len: 1000,
     branch_chance: 0.005,
     tip_speed: 0.2,
     plant_scale: 100,
@@ -65,9 +65,14 @@ const fusarium = (config) => {
     sim.makeGridmodel("field");
 
     sim.initialGrid(sim.field, "colour", 0);
+    sim.initialGrid(sim.field, "filaments", 0)
+
     sim.initialGrid(sim.field, "health", null);
     sim.initialGrid(sim.field, "plant", null);
+     sim.initialGrid(sim.field, "node", null);
+
     sim.initialGrid(sim.field, "food", 0);
+   
 
     for (let x = 0; x < sim.config.ncol; x++) {
         for (let y = 0; y < sim.config.nrow; y++) {
@@ -179,8 +184,6 @@ const fusarium = (config) => {
                 0.000005
             );
 
-            drawSpot(sim.field.grid, "food", 1, 30, plant.center)
-
             plants.push(plant);
         }
     }
@@ -196,7 +199,7 @@ const fusarium = (config) => {
     sim.createDisplay_continuous({
         model: "field",
         property: "health",
-        label: "Slice of the soil",
+        label: "Root placement",
         minval: 0,
         nticks: 10,
         maxval: 1,
@@ -204,10 +207,26 @@ const fusarium = (config) => {
 
     sim.createDisplay("field", "food", "Available resources")
 
+    sim.field.colourGradient(
+        "filaments",
+        100,
+        [0,0,0],
+        [245,245,66],
+        [255,0,0]
+    );
+    sim.createDisplay_continuous({
+        model: "field",
+        property: "filaments",
+        label: "Hyphal density",
+        minval: 0,
+        nticks: 6,
+        maxval: 5,
+    });
+
     sim.field.update = () => {
-        /*console.log(sim.time)
+        console.log(sim.time)
         sim.field.plotArray( ["Number"],[tips.length], ["red"], "Tips")
-        sim.field.plotArray( ["Number"],[fungi.length], ["blue"], "Fungi") */
+        sim.field.plotArray( ["Number"],[fungi.length], ["blue"], "Fungi")
 
         if (sim.time % sim.config.year_len == 0 && typeof process == "object")
             log(sim, plants, fungi);
@@ -220,6 +239,7 @@ const fusarium = (config) => {
                 for (let y = 0; y < config.nrow; y++) {
                     sim.field.grid[x][y].fungi = new Set([]);
                     sim.field.grid[x][y].colour = 0;
+                    sim.field.grid[x][y].filaments = 0;
                 }
             }
 

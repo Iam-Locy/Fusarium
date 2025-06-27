@@ -31,6 +31,7 @@ export default class Fungus {
         this.tips.push(tip);
 
         sim.field.grid[pos.x][pos.y].fungi.add(this);
+        sim.field.grid[pos.x][pos.y].filaments += 1;
         sim.field.grid[pos.x][pos.y].colour = this.colour;
 
         return hypha;

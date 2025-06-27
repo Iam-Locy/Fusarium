@@ -17,6 +17,7 @@ export default class Tip extends Node {
             x: Math.cos(this.direction) * this.speed,
             y: Math.sin(this.direction) * this.speed,
         };
+        this.lasLine = new Set([]);
     }
 
     grow() {
@@ -28,6 +29,10 @@ export default class Tip extends Node {
         let newPos_wrapped = wrap(Vector.rounded(newPos));
 
         if (!newPos_wrapped.isInBounds) return false;
+
+        if(sim.field.grid[newPos_wrapped.x][newPos_wrapped.y].filaments >= 5){
+            return false;
+        }
 
         let plant = sim.field.grid[newPos_wrapped.x][newPos_wrapped.y].plant;
 
@@ -51,13 +56,34 @@ export default class Tip extends Node {
             }
         }
 
-        drawLine(
+        let cells = drawLine(
             sim.field,
             ["fungi", "colour"],
             [this.fungus, this.fungus.colour],
             this.pos,
             newPos
         );
+
+        for (let cell of cells) {
+            let endPoint = false;
+            for (let coord of this.lasLine) {
+                if (cell == coord) {
+                    endPoint = true;
+                    break;
+                }
+            }
+
+            if (!endPoint) {
+                cell.filaments += 1;
+            }
+        }
+
+        this.lasLine = new Set([
+            cells[0],
+            cells[1],
+            cells[cells.length - 1],
+            cells[cells.length - 2],
+        ]);
 
         this.pos = newPos_wrapped;
         return true;
@@ -78,6 +104,7 @@ export default class Tip extends Node {
 
         branchNode.addChild(newTip);
         branchNode.addChild(this);
+        sim.field.grid[newTip.pos.x][newTip.pos.y].filaments += 1;
 
         this.fungus.tips.push(newTip);
         let pos = Vector.floored(newTip.pos);
