@@ -24,6 +24,9 @@ export default class Plant {
         );
 
         this.rootSystem = this.placePlant();
+        for(let node of this.rootSystem.preOrderTraversal()){
+            drawSpot(sim.field.grid, ["food","node"], [1,this], 15, node.pos)
+        }
         this.drawPlant();
     }
 
@@ -59,6 +62,10 @@ export default class Plant {
         this.health = 0;
 
         this.drawPlant();
+
+        for(let node of this.rootSystem.preOrderTraversal()){
+            drawSpot(sim.field.grid, ["food","node"], [0,null], 15, node.pos)
+        }
         sim.plants.grid[this.pos.x][this.pos.y].plant = null;
     }
 
