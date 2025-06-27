@@ -81,6 +81,8 @@ export function shuffle(array) {
 
 //This is a modified version of Xiaolin Wu's Line Algorithm
 export function drawLine(model, props, values, start, end) {
+    let updated = [];
+
     if (!Array.isArray(props)) {
         props = [props];
     }
@@ -122,6 +124,9 @@ export function drawLine(model, props, values, start, end) {
                     cell2[props[p]] = values[p];
                 }
             }
+
+            updated.push(cell1);
+            updated.push(cell2);
         }
     } else {
         if (end.y < start.y) {
@@ -152,8 +157,13 @@ export function drawLine(model, props, values, start, end) {
                     cell2[props[p]] = values[p];
                 }
             }
+
+            updated.push(cell1);
+            updated.push(cell2);
         }
     }
+
+    return updated;
 }
 
 export function drawSpot(grid, props, values, r, pos) {
@@ -196,12 +206,8 @@ export function drawSpot(grid, props, values, r, pos) {
                 let cell = grid[pos.x + delta][pos.y + y];
 
                 if (cell[props[i]] instanceof Set) {
-                    grid[pos.x + delta][pos.y + y][props[i]].add(
-                        values[i]
-                    );
-                    grid[pos.x + delta][pos.y - y][props[i]].add(
-                        values[i]
-                    );
+                    grid[pos.x + delta][pos.y + y][props[i]].add(values[i]);
+                    grid[pos.x + delta][pos.y - y][props[i]].add(values[i]);
                 } else {
                     grid[pos.x + delta][pos.y + y][props[i]] = values[i];
                     grid[pos.x + delta][pos.y - y][props[i]] = values[i];
@@ -211,12 +217,8 @@ export function drawSpot(grid, props, values, r, pos) {
             for (let delta = -y; delta >= y; delta--) {
                 let cell = grid[pos.x + delta][pos.y + y];
                 if (cell[props[i]] instanceof Set) {
-                    grid[pos.x + delta][pos.y + x][props[i]].add(
-                        values[i]
-                    );
-                    grid[pos.x + delta][pos.y - x][props[i]].add(
-                        values[i]
-                    );
+                    grid[pos.x + delta][pos.y + x][props[i]].add(values[i]);
+                    grid[pos.x + delta][pos.y - x][props[i]].add(values[i]);
                 } else {
                     grid[pos.x + delta][pos.y + x][props[i]] = values[i];
                     grid[pos.x + delta][pos.y - x][props[i]] = values[i];
