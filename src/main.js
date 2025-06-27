@@ -224,7 +224,7 @@ const fusarium = (config) => {
     });
 
     sim.field.update = () => {
-        console.log(sim.time)
+      /*   console.log(sim.time) */
         sim.field.plotArray( ["Number"],[tips.length], ["red"], "Tips")
         sim.field.plotArray( ["Number"],[fungi.length], ["blue"], "Fungi")
 
