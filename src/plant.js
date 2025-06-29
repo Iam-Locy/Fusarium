@@ -24,8 +24,8 @@ export default class Plant {
         );
 
         this.rootSystem = this.placePlant();
-        for(let node of this.rootSystem.preOrderTraversal()){
-            drawSpot(sim.field.grid, ["food","node"], [1,this], 15, node.pos)
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(sim.field.grid, ["food", "node"], [1, this], 15, node.pos);
         }
         this.drawPlant();
     }
@@ -63,8 +63,8 @@ export default class Plant {
 
         this.drawPlant();
 
-        for(let node of this.rootSystem.preOrderTraversal()){
-            drawSpot(sim.field.grid, ["food","node"], [0,null], 15, node.pos)
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(sim.field.grid, ["food", "node"], [0, null], 15, node.pos);
         }
         sim.plants.grid[this.pos.x][this.pos.y].plant = null;
     }
@@ -132,7 +132,7 @@ export default class Plant {
             );
 
             if (node.children.length > 0) {
-                node.children.forEach((child) => {
+                for (let child of node.children) {
                     drawLine(
                         sim.field,
                         ["health"],
@@ -140,12 +140,10 @@ export default class Plant {
                         node.pos,
                         child.pos
                     );
-                });
+                }
             }
         }
     }
-
-    
 }
 
 class plantNode extends Node {

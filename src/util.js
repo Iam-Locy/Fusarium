@@ -9,12 +9,13 @@ export function* idGenerator() {
 
 export function sample(arr, probs = null) {
     probs = probs ? probs : new Array(arr.length).fill(1 / arr.length);
-    let cdf = probs.map(
-        (
-            (sum) => (value) =>
-                (sum += value)
-        )(0)
-    );
+    let cdf = [];
+    let sum = 0;
+
+    for (let value of probs) {
+        sum += value;
+        cdf.push(sum);
+    }
 
     let r = sim.rng.random();
 

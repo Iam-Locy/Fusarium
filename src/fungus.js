@@ -40,8 +40,9 @@ export default class Fungus {
     vegetative() {
         for (let node of this.hypha.preOrderTraversal()) {
             let pos = Vector.floored(node.pos);
-            
-            this.resources.amount += this.resources.uptake * sim.field.grid[pos.x][pos.y].food
+
+            this.resources.amount +=
+                this.resources.uptake * sim.field.grid[pos.x][pos.y].food;
             this.resources.amount -= this.resources.upkeep;
 
             let plant = sim.field.grid[pos.x][pos.y].plant;
@@ -51,7 +52,7 @@ export default class Fungus {
                     this.resources.amount += clamp(
                         0,
                         plant.resources.amount,
-                        this.resources.uptake* sim.config.phi 
+                        this.resources.uptake * sim.config.phi
                     );
                     plant.resources.amount -= clamp(
                         0,
@@ -68,12 +69,13 @@ export default class Fungus {
     getContacts() {
         for (let node of this.hypha.preOrderTraversal()) {
             let pos = Vector.rounded(node.pos);
-            sim.field.grid[pos.x][pos.y].fungi.forEach((fungus) => {
+
+            for (let fungus of sim.field.grid[pos.x][pos.y].fungi) {
                 if (fungus.id != this.id) {
                     this.connectedTo.add(fungus);
                     fungus.connectedTo.add(this);
                 }
-            });
+            }
         }
     }
 
@@ -97,17 +99,17 @@ export default class Fungus {
 
         let colour = ["", "", ""];
 
-        newGenome.core.forEach((gene) => {
+        for (let gene of newGenome.core) {
             if (gene.name == "x") colour[0] = "x";
             if (gene.name == "y") colour[1] = "y";
             if (gene.name == "z") colour[2] = "z";
-        });
+        }
 
-        newGenome.acc.forEach((gene) => {
+        for (let gene of newGenome.acc) {
             if (gene.name == "x") colour[0] = "x";
             if (gene.name == "y") colour[1] = "y";
             if (gene.name == "z") colour[2] = "z";
-        });
+        }
 
         //console.log(newGenome.core.a, "after")
 

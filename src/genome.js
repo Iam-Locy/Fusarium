@@ -51,7 +51,7 @@ export class Genome {
     static geneGain(chr) {
         let newChr = [...chr];
 
-        for (let gene of Object.keys(Gene.genes)) {
+        for (let gene in Gene.genes) {
             if (sim.rng.random() < sim.config.gain_rate) {
                 newChr.push(new Gene(gene, Gene.genes[gene]));
             }
@@ -67,20 +67,20 @@ export class Genome {
         let newGenome2 = new Genome(genome2.core, genome2.acc);
 
         if (newGenome1.acc.length > 0 && newGenome2.acc.length == 0) {
-            newGenome1.acc.forEach((gene) => {
+            for (let gene of newGenome1.acc) {
                 newGenome2.acc.push(new Gene(gene.name, gene.type));
-            });
+            }
 
-            if(sim.config.hgt_mode == "cut"){
-                newGenome1.acc = []
+            if (sim.config.hgt_mode == "cut") {
+                newGenome1.acc = [];
             }
         } else if (newGenome1.acc.length == 0 && newGenome2.acc.length > 0) {
-            newGenome2.acc.forEach((gene) => {
+            for (let gene of newGenome2.acc) {
                 newGenome1.acc.push(new Gene(gene.name, gene.type));
-            });
+            }
 
-            if(sim.config.hgt_mode == "cut"){
-                newGenome2.acc = []
+            if (sim.config.hgt_mode == "cut") {
+                newGenome2.acc = [];
             }
         }
 
@@ -92,30 +92,38 @@ export class Genome {
             genes = [genes];
         }
 
-        if(genes.length == 0) return false
+        if (genes.length == 0) return false;
 
         if (this.core) {
-            genes = genes.filter((gene) => {
+            let temp = [];
+
+            for (let gene of genes) {
                 let found = false;
 
-                this.core.forEach((g) => {
+                for (let g of this.core) {
                     if (g.name == gene) found = true;
-                });
+                }
 
-                return !found;
-            });
+                if (!found) temp.push(gene);
+            }
+
+            genes = [...temp];
         }
 
         if (this.acc) {
-            genes = genes.filter((gene) => {
+            let temp = [];
+
+            for (let gene of genes) {
                 let found = false;
 
-                this.acc.forEach((g) => {
+                for (let g of this.acc) {
                     if (g.name == gene) found = true;
-                });
+                }
 
-                return !found;
-            });
+                if (!found) temp.push(gene);
+            }
+
+            genes = [...temp];
         }
 
         if (genes.length == 0) {

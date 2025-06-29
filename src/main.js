@@ -11,8 +11,8 @@ var config = {
     title: "Fusarium",
     description: "",
     maxtime: 100000,
-    ncol: 1000,
-    nrow: 1000,
+    ncol: 500,
+    nrow: 500,
     wrap: [true, true],
     scale: 1,
     skip: 10,
@@ -29,10 +29,10 @@ var config = {
             xyz: "white",
         },
         food: {
-            1: "white",  
+            1: "white",
         },
     },
-    spores: 1, //Number of starting spores
+    spores: 10, //Number of starting spores
     spore_ratio: 0.01,
     year_len: 1000,
     branch_chance: 0.005,
@@ -65,14 +65,13 @@ const fusarium = (config) => {
     sim.makeGridmodel("field");
 
     sim.initialGrid(sim.field, "colour", 0);
-    sim.initialGrid(sim.field, "filaments", 0)
+    sim.initialGrid(sim.field, "filaments", 0);
 
     sim.initialGrid(sim.field, "health", null);
     sim.initialGrid(sim.field, "plant", null);
-     sim.initialGrid(sim.field, "node", null);
+    sim.initialGrid(sim.field, "node", null);
 
     sim.initialGrid(sim.field, "food", 0);
-   
 
     for (let x = 0; x < sim.config.ncol; x++) {
         for (let y = 0; y < sim.config.nrow; y++) {
@@ -121,11 +120,11 @@ const fusarium = (config) => {
             }
         }
 
-        ["k", "l", "m"].forEach((g) => {
+        for (let g of ["k", "l", "m"]) {
             if (sim.rng.random() < 0.33) {
                 coreGenes.push(new Gene(g, Gene.genes[g]));
             }
-        });
+        }
 
         let genome = {
             core: coreGenes,
@@ -134,17 +133,17 @@ const fusarium = (config) => {
 
         let colour = ["", "", ""];
 
-        genome.core.forEach((gene) => {
+        for (let gene of genome.core) {
             if (gene.name == "x") colour[0] = "x";
             if (gene.name == "y") colour[1] = "y";
             if (gene.name == "z") colour[2] = "z";
-        });
+        }
 
-        genome.acc.forEach((gene) => {
+        for (let gene of genome.acc) {
             if (gene.name == "x") colour[0] = "x";
             if (gene.name == "y") colour[1] = "y";
             if (gene.name == "z") colour[2] = "z";
-        });
+        }
 
         colour = colour.join("");
 
@@ -205,14 +204,14 @@ const fusarium = (config) => {
         maxval: 1,
     });
 
-    sim.createDisplay("field", "food", "Available resources")
+    sim.createDisplay("field", "food", "Available resources");
 
     sim.field.colourGradient(
         "filaments",
         100,
-        [0,0,0],
-        [245,245,66],
-        [255,0,0]
+        [0, 0, 0],
+        [245, 245, 66],
+        [255, 0, 0]
     );
     sim.createDisplay_continuous({
         model: "field",
@@ -224,9 +223,9 @@ const fusarium = (config) => {
     });
 
     sim.field.update = () => {
-      /*   console.log(sim.time) */
-        sim.field.plotArray( ["Number"],[tips.length], ["red"], "Tips")
-        sim.field.plotArray( ["Number"],[fungi.length], ["blue"], "Fungi")
+        /*   console.log(sim.time) */
+        sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
+        sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
 
         if (sim.time % sim.config.year_len == 0 && typeof process == "object")
             log(sim, plants, fungi);
@@ -243,9 +242,9 @@ const fusarium = (config) => {
                 }
             }
 
-            fungi.forEach((fungus) => {
+            for (let fungus of fungi) {
                 fungus.getContacts();
-                fungus.connectedTo.forEach((network) => {
+                for (let network of fungus.connectedTo()) {
                     if (sim.rng.random() < sim.config.hgt_rate) {
                         [fungus.genome, network.genome] =
                             Genome.horizontalTransfer(
@@ -253,7 +252,7 @@ const fusarium = (config) => {
                                 network.genome
                             );
                     }
-                });
+                }
 
                 let nSpores = Math.ceil(
                     (fungus.resources.amount * fungus.hypha.nodeCount) **
@@ -287,7 +286,7 @@ const fusarium = (config) => {
 
                     new_tips.push(...newFungus.tips);
                 }
-            });
+            }
 
             tips = new_tips;
             fungi = new_fungi;
@@ -298,7 +297,7 @@ const fusarium = (config) => {
 
         tips = shuffle(tips, sim.rng);
 
-        tips.forEach((tip) => {
+        for (let tip of tips) {
             if (tip.grow()) {
                 new_tips.push(tip);
             }
@@ -306,17 +305,22 @@ const fusarium = (config) => {
             if (sim.rng.random() < sim.config.branch_chance) {
                 new_tips.push(tip.branch());
             }
-        });
+        }
 
-        fungi.forEach((fungus) => {
+        for (let fungus of fungi) {
             if (!fungus.vegetative()) {
-                new_tips = new_tips.filter((tip) => {
-                    return !fungus.tips.find((t) => t.id === tip.id);
-                });
+                let temp = []
+                for(let tip of new_tips){
+                    if(!fungus.tips.find((t) => t.id === tip.id)){
+                        temp.push(tip)
+                    }
+                }
+
+                new_tips = [...temp];
             } else {
                 new_fungi.push(fungus);
             }
-        });
+        }
 
         fungi = new_fungi;
         tips = new_tips;
@@ -340,7 +344,7 @@ const fusarium = (config) => {
 
             positions = shuffle(positions);
 
-            positions.forEach((p) => {
+            for (let p of positions) {
                 if (!sim.plants.grid[p.x][p.y].plant) {
                     let neighs = sim.plants
                         .getNeighbours8(this, p.x, p.y)
@@ -367,7 +371,7 @@ const fusarium = (config) => {
                     newPlants.push(sim.plants.grid[p.x][p.y].plant);
                     newPlantGrid[p.y][p.x] = sim.plants.grid[p.x][p.y].plant;
                 }
-            });
+            }
 
             for (let x = 0; x < plantNcol; x++) {
                 for (let y = 0; y < plantNrow; y++) {
@@ -379,7 +383,7 @@ const fusarium = (config) => {
                 }
             }
         } else {
-            plants.forEach((plant) => {
+            for (let plant of plants) {
                 if (
                     plant.resources.amount < 0.1 ||
                     isNaN(plant.resources.amount)
@@ -389,7 +393,7 @@ const fusarium = (config) => {
                     plant.vegetative();
                     newPlants.push(plant);
                 }
-            });
+            }
         }
 
         plants = newPlants;
@@ -409,11 +413,14 @@ const decayProp = (model, property, rate) => {
 const log = (sim, plants, fungi) => {
     let plantOut = "";
 
-    plants.forEach((p) => {
+    for (let p of plants) {
         let genome = "";
-        p.genome.core.forEach((g) => (genome += g.name));
+        for (let g of p.genome.core) {
+            genome += g.name;
+        }
+
         plantOut += `${genome},${p.resources.amount}\t`;
-    });
+    }
 
     sim.write_append(
         `${plantOut}\n`,
@@ -422,14 +429,19 @@ const log = (sim, plants, fungi) => {
 
     let fungusOut = "";
 
-    fungi.forEach((f) => {
+    for (let f of fungi) {
         let genomeC = "";
-        f.genome.core.forEach((g) => (genomeC += g.name));
+        for (let g of f.genome.core) {
+            genomeC += g.name;
+        }
 
         let genomeA = "";
-        f.genome.acc.forEach((g) => (genomeA += g.name));
+        for (let g of f.genome.acc) {
+            genomeA += g.name;
+        }
+
         fungusOut += `${f.id},C:${genomeC},A:${genomeA},${f.hosts.size}\t`;
-    });
+    }
 
     sim.write_append(
         `${fungusOut}\n`,
@@ -454,11 +466,11 @@ const log = (sim, plants, fungi) => {
 if (typeof process === "object") {
     let cmd_params = yargs(hideBin(process.argv)).argv;
 
-    Object.keys(config).forEach((arg) => {
+    for (let arg in config) {
         if (typeof cmd_params[arg] != "undefined") {
             config[arg] = cmd_params[arg];
         }
-    });
+    }
 
     fusarium(config);
 } else {
