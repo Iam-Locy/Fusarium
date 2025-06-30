@@ -17,7 +17,7 @@ export default class Tip extends Node {
             x: Math.cos(this.direction) * this.speed,
             y: Math.sin(this.direction) * this.speed,
         };
-        this.lasLine = new Set([]);
+        this.lastLine = new Set([]);
     }
 
     grow() {
@@ -66,7 +66,7 @@ export default class Tip extends Node {
 
         for (let cell of cells) {
             let endPoint = false;
-            for (let coord of this.lasLine) {
+            for (let coord of this.lastLine) {
                 if (cell == coord) {
                     endPoint = true;
                     break;
@@ -78,7 +78,7 @@ export default class Tip extends Node {
             }
         }
 
-        this.lasLine = new Set([
+        this.lastLine = new Set([
             cells[0],
             cells[1],
             cells[cells.length - 1],

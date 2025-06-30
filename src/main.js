@@ -4,8 +4,8 @@ import { drawSpot, sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 /* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
- */
+import { hideBin } from "yargs/helpers"; */
+
 // Configuration constant for the cacatoo simulation
 var config = {
     title: "Fusarium",
@@ -32,13 +32,13 @@ var config = {
             1: "white",
         },
     },
-    spores: 10, //Number of starting spores
+    spores: 100, //Number of starting spores
     spore_ratio: 0.01,
     year_len: 1000,
     branch_chance: 0.005,
     tip_speed: 0.2,
     plant_scale: 100,
-    tilling: false,
+    tilling: true,
     uptake: 10,
     upkeep: 0.25,
     phi: 4,
@@ -227,7 +227,7 @@ const fusarium = (config) => {
         sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
         sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
 
-        if (sim.time % sim.config.year_len == 0 && typeof process == "object")
+        if (sim.time % (sim.config.year_len / 10) == 0 && typeof process == "object")
             log(sim, plants, fungi);
 
         if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
@@ -244,7 +244,7 @@ const fusarium = (config) => {
 
             for (let fungus of fungi) {
                 fungus.getContacts();
-                for (let network of fungus.connectedTo()) {
+                for (let network of fungus.connectedTo) {
                     if (sim.rng.random() < sim.config.hgt_rate) {
                         [fungus.genome, network.genome] =
                             Genome.horizontalTransfer(
@@ -402,14 +402,6 @@ const fusarium = (config) => {
     sim.start();
 };
 
-const decayProp = (model, property, rate) => {
-    for (let x = 0; x < model.nc; x++) {
-        for (let y = 0; y < model.nr; y++) {
-            model.grid[x][y][property] *= rate;
-        }
-    }
-};
-
 const log = (sim, plants, fungi) => {
     let plantOut = "";
 
@@ -446,19 +438,6 @@ const log = (sim, plants, fungi) => {
     sim.write_append(
         `${fungusOut}\n`,
         `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_fungi.txt`
-    );
-
-    let foodOut = 0;
-
-    for (let x = 0; x < sim.field.nc; x++) {
-        for (let y = 0; y < sim.field.nr; y++) {
-            foodOut += sim.field.grid[x][y].food;
-        }
-    }
-
-    sim.write_append(
-        `${foodOut}\n`,
-        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_food.txt`
     );
 };
 
