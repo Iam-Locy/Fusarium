@@ -1,6 +1,7 @@
+import config from "./config.js";
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { drawSpot, sample, shuffle, Vector } from "./util.js";
+import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
 /* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
@@ -8,58 +9,6 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers"; */
 
 // Configuration constant for the cacatoo simulation
-var config = {
-    title: "Fusarium",
-    description: "",
-    maxtime: 100000,
-    ncol: 500,
-    nrow: 500,
-    wrap: [true, true],
-    scale: 1,
-    skip: 10,
-    seed: Math.floor(Math.random() * 100),
-    statecolours: {
-        colour: {
-            none: "grey",
-            x: "red",
-            y: "blue",
-            z: "yellow",
-            xy: "purple",
-            xz: "orange",
-            yz: "green",
-            xyz: "white",
-        },
-        pColour: {
-            none: "grey",
-            x: "red",
-            y: "blue",
-            z: "yellow",
-            xy: "purple",
-            xz: "orange",
-            yz: "green",
-            xyz: "white",
-        },
-        food: {
-            1: "white",
-        },
-    },
-    spores: 10, //Number of starting spores
-    spore_ratio: 0.005,
-    year_len: 1000,
-    branch_chance: 0.005,
-    tip_speed: 0.2,
-    plant_scale: 100,
-    tilling: false,
-    uptake: 10,
-    upkeep: 0.25,
-    phi: 4,
-    mobile_ratio: 1,
-    parasite_ratio: 0.1,
-    hgt_rate: 0.1,
-    hgt_mode: "copy",
-    loss_rate: 0.0,
-    gain_rate: 0.0,
-};
 
 export let sim;
 
@@ -69,7 +18,10 @@ const fusarium = (config) => {
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
 
-    sim = new Simulation(config);
+    sim = new Simulation({
+        ...config,
+        maxtime: config.year_len * config.max_season,
+    });
     sim.setupRandom();
 
     sim.makeGridmodel("field");
@@ -164,8 +116,8 @@ const fusarium = (config) => {
             colour == "" ? "none" : colour,
             genome,
             200,
-            sim.config.uptake,
-            sim.config.upkeep
+            sim.config.fungus_uptake,
+            sim.config.fungus_upkeep
         );
 
         fungi.push(fungus);
@@ -189,8 +141,8 @@ const fusarium = (config) => {
                 { x, y },
                 sim.rng.genrand_int(1000, 4000),
                 geneList,
-                0.02,
-                0.000005
+                sim.config.plant_production,
+                sim.config.plant_upkeep
             );
 
             plants.push(plant);
