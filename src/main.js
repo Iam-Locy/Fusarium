@@ -2,6 +2,7 @@ import Fungus from "./fungus.js";
 import Plant from "./plant.js";
 import { drawSpot, sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
+import setupDisplays from "./displays.js";
 /* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers"; */
@@ -28,17 +29,27 @@ var config = {
             yz: "green",
             xyz: "white",
         },
+        pColour: {
+            none: "grey",
+            x: "red",
+            y: "blue",
+            z: "yellow",
+            xy: "purple",
+            xz: "orange",
+            yz: "green",
+            xyz: "white",
+        },
         food: {
             1: "white",
         },
     },
-    spores: 100, //Number of starting spores
-    spore_ratio: 0.01,
+    spores: 10, //Number of starting spores
+    spore_ratio: 0.005,
     year_len: 1000,
     branch_chance: 0.005,
     tip_speed: 0.2,
     plant_scale: 100,
-    tilling: true,
+    tilling: false,
     uptake: 10,
     upkeep: 0.25,
     phi: 4,
@@ -48,7 +59,6 @@ var config = {
     hgt_mode: "copy",
     loss_rate: 0.0,
     gain_rate: 0.0,
-    food_decay_rate: 0.9,
 };
 
 export let sim;
@@ -66,6 +76,8 @@ const fusarium = (config) => {
 
     sim.initialGrid(sim.field, "colour", 0);
     sim.initialGrid(sim.field, "filaments", 0);
+    sim.initialGrid(sim.field, "resources", 0);
+    sim.initialGrid(sim.field, "eSpores", 0);
 
     sim.initialGrid(sim.field, "health", null);
     sim.initialGrid(sim.field, "plant", null);
@@ -160,8 +172,6 @@ const fusarium = (config) => {
         tips.push(...fungus.tips);
     }
 
-    sim.createDisplay("field", "colour", "Fusarium oxysporum mycelium");
-
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
@@ -187,47 +197,17 @@ const fusarium = (config) => {
         }
     }
 
-    sim.field.colourGradient(
-        "health",
-        100,
-        [0, 0, 0],
-        [120, 90, 10],
-        [50, 170, 80]
-    );
-
-    sim.createDisplay_continuous({
-        model: "field",
-        property: "health",
-        label: "Root placement",
-        minval: 0,
-        nticks: 10,
-        maxval: 1,
-    });
-
-    sim.createDisplay("field", "food", "Available resources");
-
-    sim.field.colourGradient(
-        "filaments",
-        100,
-        [0, 0, 0],
-        [245, 245, 66],
-        [255, 0, 0]
-    );
-    sim.createDisplay_continuous({
-        model: "field",
-        property: "filaments",
-        label: "Hyphal density",
-        minval: 0,
-        nticks: 6,
-        maxval: 5,
-    });
+    setupDisplays(sim);
 
     sim.field.update = () => {
         /*   console.log(sim.time) */
         sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
         sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
 
-        if (sim.time % (sim.config.year_len / 10) == 0 && typeof process == "object")
+        if (
+            sim.time % (sim.config.year_len / 10) == 0 &&
+            typeof process == "object"
+        )
             log(sim, plants, fungi);
 
         if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
@@ -239,6 +219,8 @@ const fusarium = (config) => {
                     sim.field.grid[x][y].fungi = new Set([]);
                     sim.field.grid[x][y].colour = 0;
                     sim.field.grid[x][y].filaments = 0;
+                    sim.field.grid[x][y].resources = 0;
+                    sim.field.grid[x][y].eSpores = 0;
                 }
             }
 
@@ -309,10 +291,10 @@ const fusarium = (config) => {
 
         for (let fungus of fungi) {
             if (!fungus.vegetative()) {
-                let temp = []
-                for(let tip of new_tips){
-                    if(!fungus.tips.find((t) => t.id === tip.id)){
-                        temp.push(tip)
+                let temp = [];
+                for (let tip of new_tips) {
+                    if (!fungus.tips.find((t) => t.id === tip.id)) {
+                        temp.push(tip);
                     }
                 }
 

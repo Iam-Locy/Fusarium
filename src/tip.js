@@ -64,6 +64,8 @@ export default class Tip extends Node {
             newPos
         );
 
+        this.fungus.cells.add(...cells)
+
         for (let cell of cells) {
             let endPoint = false;
             for (let coord of this.lastLine) {

@@ -18,6 +18,7 @@ export default class Fungus {
         };
         this.tips = [];
         this.hypha = this.placeHypha(pos);
+        this.cells = new Set([]);
         this.hosts = new Set([]);
         this.connectedTo = new Set([]);
     }
@@ -61,6 +62,14 @@ export default class Fungus {
                     );
                 }
             }
+        }
+
+        for (let cell of this.cells) {
+            cell.resources = this.resources.amount / 1000;
+            cell.eSpores = Math.ceil(
+                (this.resources.amount * this.hypha.nodeCount) ** (1 / 3) *
+                    sim.config.spore_ratio
+            );
         }
 
         return this.resources.amount > 0;

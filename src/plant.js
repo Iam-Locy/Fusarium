@@ -9,6 +9,12 @@ export default class Plant {
     constructor(pos, resource, genes, production, upkeep) {
         this.id = genID.next().value;
         this.genome = new Genome(genes);
+
+        this.pColour = "";
+        for (let gene of this.genome.core) {
+            this.pColour += gene.name;
+        }
+
         this.pos = pos;
         this.center = Plant.plantCenter(this.pos);
         this.resources = {
@@ -27,6 +33,7 @@ export default class Plant {
         for (let node of this.rootSystem.preOrderTraversal()) {
             drawSpot(sim.field.grid, ["food", "node"], [1, this], 15, node.pos);
         }
+
         this.drawPlant();
     }
 
@@ -60,6 +67,7 @@ export default class Plant {
     die() {
         this.resources.amount = 0;
         this.health = 0;
+        this.pColour = null;
 
         this.drawPlant();
 
@@ -125,8 +133,8 @@ export default class Plant {
         for (let node of this.rootSystem.preOrderTraversal()) {
             drawSpot(
                 sim.field.grid,
-                ["health", "plant"],
-                [this.health, this.health > 0 ? this : null],
+                ["health", "plant", "pColour"],
+                [this.health, this.health > 0 ? this : null, this.pColour],
                 3,
                 node.pos
             );
@@ -135,8 +143,8 @@ export default class Plant {
                 for (let child of node.children) {
                     drawLine(
                         sim.field,
-                        ["health"],
-                        [this.health],
+                        ["health", "pColour"],
+                        [this.health, this.pColour],
                         node.pos,
                         child.pos
                     );
