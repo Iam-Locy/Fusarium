@@ -16,20 +16,24 @@ export class Genome {
     }
 
     static cutNPaste(chr1, chr2) {
-        let newChr1 = [...chr1];
-        let newChr2 = [...chr2];
+        let newChr1 = [];
+        let newChr2 = [];
 
-        for (let i = 0; i < chr1.length; i++) {
-            if (sim.rng.random() < 0.01) {
-                newChr2.splice(i, 0, chr1[i]);
-                newChr1.splice(i, 1);
+        for (let gene of chr1) {
+            if (sim.rng.random() < sim.config.relocation_rate) {
+                let place = sim.rng.genrand_int(0, newChr2.length + 1);
+                newChr2.splice(place, 0, gene);
+            } else {
+                newChr1.push(gene);
             }
         }
 
-        for (let i = 0; i < chr2.length; i++) {
-            if (sim.rng.random() < 0.01) {
-                newChr1.splice(i, 0, chr2[i]);
-                newChr2.splice(i, 1);
+        for (let gene of chr2) {
+            if (sim.rng.random() < sim.config.relocation_rate) {
+                let place = sim.rng.genrand_int(0, newChr1.length + 1);
+                newChr1.splice(place, 0, gene);
+            } else {
+                newChr2.push(gene);
             }
         }
 

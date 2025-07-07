@@ -95,15 +95,13 @@ export default class Fungus {
         newGenome.core = Genome.geneGain(newGenome.core);
 
         if (newGenome.acc.length > 0) {
+            newGenome.acc = Genome.geneLoss(newGenome.acc);
+            newGenome.acc = Genome.geneGain(newGenome.acc);
+
             [newGenome.core, newGenome.acc] = Genome.cutNPaste(
                 newGenome.core,
                 newGenome.acc
-            )[(newGenome.acc, newGenome.core)] = Genome.cutNPaste(
-                newGenome.acc,
-                newGenome.core
             );
-            newGenome.acc = Genome.geneLoss(newGenome.acc);
-            newGenome.acc = Genome.geneGain(newGenome.acc);
         }
 
         let colour = ["", "", ""];
@@ -119,8 +117,6 @@ export default class Fungus {
             if (gene.name == "y") colour[1] = "y";
             if (gene.name == "z") colour[2] = "z";
         }
-
-        //console.log(newGenome.core.a, "after")
 
         colour = colour.join("");
 

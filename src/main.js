@@ -18,10 +18,8 @@ const fusarium = (config) => {
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
 
-    sim = new Simulation({
-        ...config,
-        maxtime: config.year_len * config.max_season,
-    });
+    config.maxtime = config.year_len * config.max_season;
+    sim = new Simulation(config);
     sim.setupRandom();
 
     sim.makeGridmodel("field");
@@ -149,18 +147,21 @@ const fusarium = (config) => {
         }
     }
 
-    setupDisplays(sim);
+    if (typeof window === "object") {
+        setupDisplays(sim);
+    }
 
     sim.field.update = () => {
-        /*   console.log(sim.time) */
+
         sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
         sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
 
         if (
             sim.time % (sim.config.year_len / 10) == 0 &&
-            typeof process == "object"
-        )
+            typeof process === "object"
+        ) {
             log(sim, plants, fungi);
+        }
 
         if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
             let new_fungi = [];
@@ -350,7 +351,7 @@ const log = (sim, plants, fungi) => {
 
     sim.write_append(
         `${plantOut}\n`,
-        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_plants.txt`
+        `./output/Seed_${sim.config.seed}_uptake_${sim.config.fungus_uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_plants.txt`
     );
 
     let fungusOut = "";
@@ -371,7 +372,7 @@ const log = (sim, plants, fungi) => {
 
     sim.write_append(
         `${fungusOut}\n`,
-        `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_fungi.txt`
+        `./output/Seed_${sim.config.seed}_uptake_${sim.config.fungus_uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_fungi.txt`
     );
 };
 
