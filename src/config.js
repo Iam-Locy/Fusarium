@@ -42,7 +42,7 @@ export default {
     fungus_upkeep: 0.02,         // Amount of internal resources used in 1 ts by a node of the hyphal network
     phi: 1,                     // Multiplier for the uptake of parasitic nodes
                                 // Parasitic nodes take up (1 + phi) * uptake amount of resources
-    mobile_ratio: 1,            // Ratio of fungi with mobile genomic compartment (on which the pathogenicity gene resides)
+    mobile_ratio: 0.5,            // Ratio of fungi with mobile genomic compartment (on which the pathogenicity gene resides)
     parasite_ratio: 0.1,        // Ratio og fungi with pathogenicity gene
     hgt_rate: 1,              // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
     hgt_mode: "copy",           // Mode of hgt, it can be "copy" (copy-paste) or "cut" (cut&paste)
@@ -52,7 +52,7 @@ export default {
 
     //Settings for the Plants class
     plant_scale: 100,           // Scale of one cell on 
-    plant_production: 0.02,     // Reseurce prodiction rate of the plants
+    plant_production: 0.02,     // Resource production rate of the plants
     plant_upkeep: 0.0000025,     // Resource usage rate of the plants
 
     //Display settings
