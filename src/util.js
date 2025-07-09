@@ -82,8 +82,6 @@ export function shuffle(array) {
 
 //This is a modified version of Xiaolin Wu's Line Algorithm
 export function drawLine(model, props, values, start, end) {
-    let updated = [];
-
     if (!Array.isArray(props)) {
         props = [props];
     }
@@ -92,9 +90,9 @@ export function drawLine(model, props, values, start, end) {
         values = [values];
     }
 
-    start = Vector.rounded(start);
+    start = Vector.floored(start);
 
-    end = Vector.rounded(end);
+    end = Vector.floored(end);
 
     if (Math.abs(end.y - start.y) < Math.abs(end.x - start.x)) {
         if (end.x < start.x) {
@@ -110,24 +108,21 @@ export function drawLine(model, props, values, start, end) {
             let x = start.x + i;
             let y = start.y + i * m;
 
-            let ivec1 = wrap(Vector.floored(new Vector(x, y)));
-            let ivec2 = wrap(Vector.floored(new Vector(ivec1.x, ivec1.y + 1)));
+            let ivec = wrap(Vector.floored(new Vector(x, y)));
 
-            let cell1 = model.grid[ivec1.x][ivec1.y];
-            let cell2 = model.grid[ivec2.x][ivec2.y];
-
-            for (let p = 0; p < props.length; p++) {
-                if (cell1[props[p]] instanceof Set) {
-                    cell1[props[p]].add(values[p]);
-                    cell2[props[p]].add(values[p]);
-                } else {
-                    cell1[props[p]] = values[p];
-                    cell2[props[p]] = values[p];
-                }
+            if (y - ivec.y > 0.5) {
+                ivec.y += 1;
             }
 
-            updated.push(cell1);
-            updated.push(cell2);
+            let cell = model.grid[ivec.x][ivec.y];
+
+            for (let p = 0; p < props.length; p++) {
+                if (cell[props[p]] instanceof Set) {
+                    cell[props[p]].add(values[p]);
+                } else {
+                    cell[props[p]] = values[p];
+                }
+            }
         }
     } else {
         if (end.y < start.y) {
@@ -143,28 +138,23 @@ export function drawLine(model, props, values, start, end) {
             let x = start.x + i * m;
             let y = start.y + i;
 
-            let ivec1 = wrap(Vector.floored(new Vector(x, y)));
-            let ivec2 = wrap(Vector.floored(new Vector(ivec1.x + 1, ivec1.y)));
+            let ivec = wrap(Vector.floored(new Vector(x, y)));
 
-            let cell1 = model.grid[ivec1.x][ivec1.y];
-            let cell2 = model.grid[ivec2.x][ivec2.y];
-
-            for (let p = 0; p < props.length; p++) {
-                if (cell1[props[p]] instanceof Set) {
-                    cell1[props[p]].add(values[p]);
-                    cell2[props[p]].add(values[p]);
-                } else {
-                    cell1[props[p]] = values[p];
-                    cell2[props[p]] = values[p];
-                }
+            if (x - ivec.x > 0.5) {
+                ivec.x += 1;
             }
 
-            updated.push(cell1);
-            updated.push(cell2);
+            let cell = model.grid[ivec.x][ivec.y];
+
+            for (let p = 0; p < props.length; p++) {
+                if (cell[props[p]] instanceof Set) {
+                    cell[props[p]].add(values[p]);
+                } else {
+                    cell[props[p]] = values[p];
+                }
+            }
         }
     }
-
-    return updated;
 }
 
 export function drawSpot(grid, props, values, r, pos) {

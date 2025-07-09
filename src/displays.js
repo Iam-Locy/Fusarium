@@ -4,25 +4,25 @@ export default function setupDisplays(sim) {
     }
 
     if (sim.config.hyphal_density_display) {
-        sim.field.colourViridis("filaments", 100, false, "inferno");
+        sim.field.colourViridis("node_count", 100, false, "inferno");
 
         sim.createDisplay_continuous({
             model: "field",
-            property: "filaments",
+            property: "node_count",
             label: "Hyphal density",
             minval: 0,
             nticks: 6,
-            maxval: 5,
+            maxval: sim.config.max_node_count,
         });
     }
 
-    if (sim.config.fungi_resources_display) {
+    if (sim.config.resources_display) {
         sim.field.colourViridis("resources", 100);
 
         sim.createDisplay_continuous({
             model: "field",
             property: "resources",
-            label: "Accumulated resources (x1000)",
+            label: `Accumulated resources (x${sim.config.resources_display_unit})`,
             minval: 0,
             nticks: 11,
             maxval: 500,
@@ -44,7 +44,7 @@ export default function setupDisplays(sim) {
             label: "Expected number of spores",
             minval: 0,
             nticks: 6,
-            maxval: 5,
+            maxval: 10,
         });
     }
 

@@ -1,7 +1,7 @@
-import Tip from "./tip.js";
-import { clamp, drawSpot, idGenerator, sample, Vector, wrap } from "./util.js";
+import { fungalNode, Tip } from "./fungalNode.js";
+import { clamp, idGenerator, Vector } from "./util.js";
 import { sim } from "./main.js";
-import { Node, Tree } from "./tree.js";
+import { Tree } from "./tree.js";
 import { Genome } from "./genome.js";
 
 const genID = idGenerator();
@@ -17,36 +17,39 @@ export default class Fungus {
             upkeep: upkeep,
         };
         this.tips = [];
-        this.hypha = this.placeHypha(pos);
         this.cells = new Set([]);
+        this.hypha = this.placeHypha(pos);
         this.hosts = new Set([]);
         this.connectedTo = new Set([]);
     }
 
     placeHypha(pos) {
-        let hypha = new Tree(new Node(pos));
+        let hypha = new Tree(new fungalNode(pos, this));
 
         let tip = new Tip(pos, this);
 
         hypha.root.addChild(tip);
         this.tips.push(tip);
 
-        sim.field.grid[pos.x][pos.y].fungi.add(this);
-        sim.field.grid[pos.x][pos.y].filaments += 1;
+        sim.field.grid[pos.x][pos.y].nodes.add(hypha.root);
+        sim.field.grid[pos.x][pos.y].node_count += 1;
         sim.field.grid[pos.x][pos.y].colour = this.colour;
-
         return hypha;
     }
 
     vegetative() {
-        for (let node of this.hypha.preOrderTraversal()) {
-            let pos = Vector.floored(node.pos);
+        for (let cell of this.cells) {
+            let pos = cell.pos;
+            let gridPoint = sim.field.grid[pos.x][pos.y];
 
-            this.resources.amount +=
-                this.resources.uptake * sim.field.grid[pos.x][pos.y].food;
-            this.resources.amount -= this.resources.upkeep;
+            if (gridPoint.food == 0) {
+                this.cells.delete(cell);
+                continue;
+            }
 
-            let plant = sim.field.grid[pos.x][pos.y].plant;
+            this.resources.amount += this.resources.uptake;
+
+            let plant = gridPoint.plant;
 
             if (plant) {
                 if (this.hosts.has(plant)) {
@@ -55,6 +58,7 @@ export default class Fungus {
                         plant.resources.amount,
                         this.resources.uptake * sim.config.phi
                     );
+
                     plant.resources.amount -= clamp(
                         0,
                         plant.resources.amount,
@@ -64,12 +68,25 @@ export default class Fungus {
             }
         }
 
-        for (let cell of this.cells) {
-            cell.resources = this.resources.amount / 1000;
-            cell.eSpores = Math.ceil(
-                (this.resources.amount * this.hypha.nodeCount) ** (1 / 3) *
-                    sim.config.spore_ratio
-            );
+        this.resources.amount -= this.hypha.nodeCount * this.resources.upkeep;
+
+        if (
+            typeof window === "object" &&
+            sim.time % sim.config.display_refresh == 0
+        ) {
+            for (let node of this.hypha.preOrderTraversal()) {
+                let pos = Vector.floored(node.pos);
+                if (sim.config.resources_display) {
+                    sim.field.grid[pos.x][pos.y].resources =
+                        this.resources.amount /
+                        sim.config.resources_display_unit;
+                }
+
+                if (sim.config.expected_spores_display) {
+                    sim.field.grid[pos.x][pos.y].eSpores =
+                        (this.resources.amount * this.hypha.nodeCount) ** sim.config.sporulation_exponent
+                }
+            }
         }
 
         return this.resources.amount > 0;
@@ -77,12 +94,12 @@ export default class Fungus {
 
     getContacts() {
         for (let node of this.hypha.preOrderTraversal()) {
-            let pos = Vector.rounded(node.pos);
+            let pos = Vector.floored(node.pos);
 
-            for (let fungus of sim.field.grid[pos.x][pos.y].fungi) {
-                if (fungus.id != this.id) {
-                    this.connectedTo.add(fungus);
-                    fungus.connectedTo.add(this);
+            for (let node of sim.field.grid[pos.x][pos.y].nodes) {
+                if (node.fungus.id != this.id) {
+                    this.connectedTo.add(node.fungus);
+                    node.fungus.connectedTo.add(this);
                 }
             }
         }
@@ -125,7 +142,7 @@ export default class Fungus {
         }
 
         let spore = new Fungus(
-            pos,
+            Vector.floored(pos),
             colour == "" ? "none" : colour,
             newGenome,
             clamp(0, 200, this.resources.amount / nSpores),

@@ -25,19 +25,19 @@ const fusarium = (config) => {
     sim.makeGridmodel("field");
 
     sim.initialGrid(sim.field, "colour", 0);
-    sim.initialGrid(sim.field, "filaments", 0);
+    sim.initialGrid(sim.field, "node_count", 0);
     sim.initialGrid(sim.field, "resources", 0);
     sim.initialGrid(sim.field, "eSpores", 0);
 
     sim.initialGrid(sim.field, "health", null);
     sim.initialGrid(sim.field, "plant", null);
-    sim.initialGrid(sim.field, "node", null);
+    sim.initialGrid(sim.field, "plant_node", null);
 
     sim.initialGrid(sim.field, "food", 0);
 
     for (let x = 0; x < sim.config.ncol; x++) {
         for (let y = 0; y < sim.config.nrow; y++) {
-            sim.field.grid[x][y].fungi = new Set([]);
+            sim.field.grid[x][y].nodes = new Set([]);
         }
     }
 
@@ -152,7 +152,6 @@ const fusarium = (config) => {
     }
 
     sim.field.update = () => {
-
         sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
         sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
 
@@ -169,9 +168,9 @@ const fusarium = (config) => {
 
             for (let x = 0; x < config.ncol; x++) {
                 for (let y = 0; y < config.nrow; y++) {
-                    sim.field.grid[x][y].fungi = new Set([]);
                     sim.field.grid[x][y].colour = 0;
-                    sim.field.grid[x][y].filaments = 0;
+                    sim.field.grid[x][y].nodes = new Set([]);
+                    sim.field.grid[x][y].node_count = 0;
                     sim.field.grid[x][y].resources = 0;
                     sim.field.grid[x][y].eSpores = 0;
                 }
@@ -190,9 +189,7 @@ const fusarium = (config) => {
                 }
 
                 let nSpores = Math.ceil(
-                    (fungus.resources.amount * fungus.hypha.nodeCount) **
-                        (1 / 3) *
-                        sim.config.spore_ratio
+                    (fungus.resources.amount * fungus.hypha.nodeCount) ** sim.config.sporulation_exponent
                 );
 
                 for (let i = 0; i < nSpores; i++) {
@@ -238,7 +235,9 @@ const fusarium = (config) => {
             }
 
             if (sim.rng.random() < sim.config.branch_chance) {
-                new_tips.push(tip.branch());
+                let branch_tip = tip.branch();
+
+                if (branch_tip) new_tips.push(branch_tip);
             }
         }
 
