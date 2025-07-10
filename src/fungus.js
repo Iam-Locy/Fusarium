@@ -72,7 +72,7 @@ export default class Fungus {
 
         if (
             typeof window === "object" &&
-            sim.time % sim.config.display_refresh == 0
+            sim.time % sim.config.display_refresh === 0
         ) {
             for (let node of this.hypha.preOrderTraversal()) {
                 let pos = Vector.floored(node.pos);
@@ -93,8 +93,8 @@ export default class Fungus {
     }
 
     getContacts() {
-        for (let node of this.hypha.preOrderTraversal()) {
-            let pos = Vector.floored(node.pos);
+        for (let tip of this.tips) {
+            let pos = Vector.floored(tip.pos);
 
             for (let node of sim.field.grid[pos.x][pos.y].nodes) {
                 if (node.fungus.id != this.id) {
