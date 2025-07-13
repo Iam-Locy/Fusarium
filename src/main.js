@@ -147,19 +147,61 @@ const fusarium = (config) => {
         }
     }
 
+    let allFungi = fungi;
+    let allPlants = plants;
+
     if (typeof window === "object") {
         setupDisplays(sim);
     }
 
     sim.field.update = () => {
-        sim.field.plotArray(["Number"], [tips.length], ["red"], "Tips");
-        sim.field.plotArray(["Number"], [fungi.length], ["blue"], "Fungi");
+        if (typeof window === "object") {
+        }
 
-        if (
-            sim.time % (sim.config.year_len / 10) == 0 &&
-            typeof process === "object"
-        ) {
-            log(sim, plants, fungi);
+        if (sim.time % (sim.config.year_len / 10) == 0) {
+            if (typeof process === "object") {
+                log(sim, plants, fungi);
+            }
+
+            if (typeof window === "object") {
+                let fungiRes = [];
+
+                for (let fungus of allFungi) {
+                    fungiRes.push(fungus.resources.amount);
+                }
+
+                let coloursF = ["red"];
+
+                for (let i = 0; i < allFungi.length - 1; i++) {
+                    coloursF.push("grey");
+                }
+
+                sim.field.plotArray(
+                    ["Amount"],
+                    fungiRes,
+                    coloursF,
+                    "Fungi resources"
+                );
+
+                let plantRes = [];
+
+                for (let plant of allPlants) {
+                    plantRes.push(plant.resources.amount);
+                }
+
+                let coloursP = ["red"];
+
+                for (let i = 0; i < allPlants.length - 1; i++) {
+                    coloursP.push("grey");
+                }
+
+                sim.field.plotArray(
+                    ["Amount"],
+                    plantRes,
+                    coloursP,
+                    "Plants resources"
+                );
+            }
         }
 
         if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
@@ -189,7 +231,8 @@ const fusarium = (config) => {
                 }
 
                 let nSpores = Math.ceil(
-                    (fungus.resources.amount * fungus.hypha.nodeCount) ** sim.config.sporulation_exponent
+                    (fungus.resources.amount * fungus.hypha.nodeCount) **
+                        sim.config.sporulation_exponent
                 );
 
                 for (let i = 0; i < nSpores; i++) {
@@ -222,6 +265,7 @@ const fusarium = (config) => {
 
             tips = new_tips;
             fungi = new_fungi;
+            allFungi = fungi;
         }
 
         let new_fungi = [];
@@ -316,6 +360,8 @@ const fusarium = (config) => {
                     }
                 }
             }
+
+            allPlants = newPlants;
         } else {
             for (let plant of plants) {
                 if (
@@ -337,6 +383,20 @@ const fusarium = (config) => {
 };
 
 const log = (sim, plants, fungi) => {
+    let fileName =
+        "./output/" +
+        `Seed_${sim.config.seed}_` +
+        `mSeason_${sim.config.max_season}_` +
+        `tilling_${sim.config.tilling}_` +
+        `sporeExp_${sim.config.sporulation_exponent}_` +
+        `uptake_${sim.config.fungus_uptake}_` +
+        `phi_${sim.config.phi}_` +
+        `mobile_${sim.config.mobile_ratio}_` +
+        `parasite_${sim.config.parasite_ratio}_` +
+        `hgt_${sim.config.hgt_rate}_` +
+        `mode_${sim.config.hgt_mode}_` +
+        `relocation_${sim.config.relocation_rate}_` +
+        `sPlant_${sim.config.plant_scale}`;
     let plantOut = "";
 
     for (let p of plants) {
@@ -345,13 +405,10 @@ const log = (sim, plants, fungi) => {
             genome += g.name;
         }
 
-        plantOut += `${genome},${p.resources.amount}\t`;
+        plantOut += `${p.id};${genome};${p.resources.amount}\t`;
     }
 
-    sim.write_append(
-        `${plantOut}\n`,
-        `./output/Seed_${sim.config.seed}_uptake_${sim.config.fungus_uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_plants.txt`
-    );
+    sim.write_append(`${plantOut}\n`, `${fileName}_plants.txt`);
 
     let fungusOut = "";
 
@@ -366,13 +423,17 @@ const log = (sim, plants, fungi) => {
             genomeA += g.name;
         }
 
-        fungusOut += `${f.id},C:${genomeC},A:${genomeA},${f.hosts.size}\t`;
+        let hosts = "";
+        for (let host of f.hosts) {
+            hosts += `${host.id},`;
+        }
+
+        hosts = hosts.substring(0, hosts.length - 1);
+
+        fungusOut += `F:${f.id};C:${genomeC};A:${genomeA};R:${f.resources.amount};S:${f.hypha.nodeCount};H:${hosts}\t`;
     }
 
-    sim.write_append(
-        `${fungusOut}\n`,
-        `./output/Seed_${sim.config.seed}_uptake_${sim.config.fungus_uptake}_phi_${sim.config.phi}_mode_${sim.config.hgt_mode}_hgt_${sim.config.hgt_rate}_speed_${sim.config.tip_speed}_fungi.txt`
-    );
+    sim.write_append(`${fungusOut}\n`, `${fileName}_fungi.txt`);
 };
 
 // Run the simulation
