@@ -44,7 +44,7 @@ export class Genome {
         let newChr = [...chr];
 
         for (let i = 0; i < chr.length; i++) {
-            if (sim.rng.random() < sim.config.loss_rate) {
+            if (sim.rng.random() < sim.config.gene_loss_rate) {
                 newChr.splice(i, 1);
             }
         }
@@ -56,7 +56,7 @@ export class Genome {
         let newChr = [...chr];
 
         for (let gene in Gene.genes) {
-            if (sim.rng.random() < sim.config.gain_rate) {
+            if (sim.rng.random() < sim.config.gene_gain_rate) {
                 newChr.push(new Gene(gene, Gene.genes[gene]));
             }
         }

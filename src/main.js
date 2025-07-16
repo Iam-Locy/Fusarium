@@ -4,9 +4,10 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
-import { hideBin } from "yargs/helpers"; */
+import yargs_options from "./options.js"
+import { hideBin } from "yargs/helpers";
 
 // Configuration constant for the cacatoo simulation
 
@@ -18,7 +19,7 @@ const fusarium = (config) => {
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
 
-    config.maxtime = config.year_len * config.max_season;
+    config.maxtime = config.season_len * config.max_season;
     sim = new Simulation(config);
     sim.setupRandom();
 
@@ -158,7 +159,7 @@ const fusarium = (config) => {
         if (typeof window === "object") {
         }
 
-        if (sim.time % (sim.config.year_len / 10) == 0) {
+        if (sim.time % (sim.config.season_len / 10) == 0) {
             if (typeof process === "object") {
                 log(sim, plants, fungi);
             }
@@ -204,7 +205,7 @@ const fusarium = (config) => {
             }
         }
 
-        if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
+        if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
             let new_fungi = [];
             let new_tips = [];
 
@@ -238,7 +239,7 @@ const fusarium = (config) => {
                 for (let i = 0; i < nSpores; i++) {
                     let sporePos;
 
-                    if (config.tilling) {
+                    if (sim.config.tilling) {
                         sporePos = {
                             x: sim.rng.genrand_int(0, config.ncol - 1),
                             y: sim.rng.genrand_int(0, config.nrow - 1),
@@ -307,7 +308,7 @@ const fusarium = (config) => {
     sim.plants.update = function () {
         let newPlants = [];
 
-        if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
+        if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
             let newPlantGrid = [...Array(sim.plants.grid.length)].map((e) =>
                 Array(sim.plants.grid[0].length).fill(null)
             );
@@ -438,7 +439,9 @@ const log = (sim, plants, fungi) => {
 
 // Run the simulation
 if (typeof process === "object") {
-    let cmd_params = yargs(hideBin(process.argv)).argv;
+    let cmd_params = yargs()
+        .options(yargs_options)
+        .parse(hideBin(process.argv));
 
     for (let arg in config) {
         if (typeof cmd_params[arg] != "undefined") {
