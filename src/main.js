@@ -370,7 +370,9 @@ const fusarium = (config) => {
 
         plants = newPlants;
     };
-
+    sim.addButton("Toggle", function () {
+        sim.toggle_play();
+    });
     sim.start();
 };
 
