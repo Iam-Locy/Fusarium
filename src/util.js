@@ -80,6 +80,16 @@ export function shuffle(array) {
     return array;
 }
 
+export function deepCopyArray(arr) {
+    let newArr = [];
+
+    for (let i = 0; i < arr.length; i++) {
+        newArr[i] = arr[i].slice();
+    }
+
+    return newArr;
+}
+
 //This is a modified version of Xiaolin Wu's Line Algorithm
 export function drawLine(model, props, values, start, end) {
     if (!Array.isArray(props)) {
