@@ -1,5 +1,5 @@
 import { fungalNode, Tip } from "./fungalNode.js";
-import { clamp, idGenerator, Vector } from "./util.js";
+import { clamp, deepCopyArray, idGenerator, Vector } from "./util.js";
 import { sim } from "./main.js";
 import { Tree } from "./tree.js";
 import { Genome } from "./genome.js";
@@ -7,10 +7,10 @@ import { Genome } from "./genome.js";
 const genID = idGenerator();
 
 export default class Fungus {
-    constructor(pos, colour, genes, resource, uptake, upkeep) {
+    constructor(pos, colour, genome, resource, uptake, upkeep) {
         this.id = genID.next().value;
         this.colour = colour;
-        this.genome = new Genome(genes.core, genes.acc);
+        this.genome = genome;
         this.resources = {
             amount: resource,
             uptake: uptake,
@@ -84,7 +84,8 @@ export default class Fungus {
 
                 if (sim.config.expected_spores_display) {
                     sim.field.grid[pos.x][pos.y].eSpores =
-                        (this.resources.amount * this.hypha.nodeCount) ** sim.config.sporulation_exponent
+                        (this.resources.amount * this.hypha.nodeCount) **
+                        sim.config.sporulation_exponent;
                 }
             }
         }
@@ -106,33 +107,33 @@ export default class Fungus {
     }
 
     getSpore(pos, nSpores) {
-        let newGenome = new Genome([...this.genome.core], [...this.genome.acc]);
+        let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
 
-        newGenome.core = Genome.geneLoss(newGenome.core);
-        newGenome.core = Genome.geneGain(newGenome.core);
-
-        if (newGenome.acc.length > 0) {
-            newGenome.acc = Genome.geneLoss(newGenome.acc);
-            newGenome.acc = Genome.geneGain(newGenome.acc);
-
-            [newGenome.core, newGenome.acc] = Genome.cutNPaste(
-                newGenome.core,
-                newGenome.acc
-            );
+        for (let i = 0; i < newGenome.karyotype.length; i++) {
+            {
+                newGenome.karyotype[i] = Genome.geneLoss(
+                    newGenome.karyotype[i]
+                );
+                newGenome.karyotype[i] = Genome.geneGain(
+                    newGenome.karyotype[i]
+                );
+            }
         }
+
+        if (newGenome.karyotype.length > 1) {
+            newGenome = Genome.cutNPaste(newGenome);
+        }
+
+        newGenome = Genome.chromosomeLoss(newGenome)
 
         let colour = ["", "", ""];
 
-        for (let gene of newGenome.core) {
-            if (gene.name == "x") colour[0] = "x";
-            if (gene.name == "y") colour[1] = "y";
-            if (gene.name == "z") colour[2] = "z";
-        }
-
-        for (let gene of newGenome.acc) {
-            if (gene.name == "x") colour[0] = "x";
-            if (gene.name == "y") colour[1] = "y";
-            if (gene.name == "z") colour[2] = "z";
+        for (let chr of newGenome.karyotype) {
+            for (let gene of chr) {
+                if (gene.name == "x") colour[0] = "x";
+                if (gene.name == "y") colour[1] = "y";
+                if (gene.name == "z") colour[2] = "z";
+            }
         }
 
         colour = colour.join("");

@@ -1,51 +1,56 @@
 import { sim } from "./main.js";
+import { deepCopyArray } from "./util.js";
 
 export class Genome {
-    constructor(coreGenes, accGenes = undefined) {
-        if (!Array.isArray(coreGenes)) {
-            console.error(`coreGenes: ${coreGenes} is not an Array!`);
-        } else {
-            this.core = coreGenes;
-        }
+    constructor(karyotype) {
+        this.karyotype = [];
+        for (let chr of karyotype) {
+            if (!Array.isArray(chr)) {
+                console.error(`${chr} in not an Array`);
+            }
 
-        if (!Array.isArray(accGenes) && accGenes != undefined) {
-            console.error(`accGenes: ${accGenes} is not an Array!`);
-        } else {
-            this.acc = accGenes;
+            this.karyotype.push(chr);
         }
     }
 
-    static cutNPaste(chr1, chr2) {
-        let newChr1 = [];
-        let newChr2 = [];
-
-        for (let gene of chr1) {
-            if (sim.rng.random() < sim.config.relocation_rate) {
-                let place = sim.rng.genrand_int(0, newChr2.length + 1);
-                newChr2.splice(place, 0, gene);
-            } else {
-                newChr1.push(gene);
-            }
+    static cutNPaste(genome) {
+        let newKaryotype = new Array(genome.karyotype.length);
+        for (let i = 0; i < newKaryotype.length; i++) {
+            newKaryotype[i] = [];
         }
 
-        for (let gene of chr2) {
-            if (sim.rng.random() < sim.config.relocation_rate) {
-                let place = sim.rng.genrand_int(0, newChr1.length + 1);
-                newChr1.splice(place, 0, gene);
-            } else {
-                newChr2.push(gene);
+        for (let i = 0; i < genome.karyotype.length; i++) {
+            for (let gene of genome.karyotype[i]) {
+                let moved = false;
+                for (let j = 0; j < newKaryotype.length; j++) {
+                    if (
+                        i != j &&
+                        sim.rng.random() < sim.config.relocation_rate
+                    ) {
+                        let index = sim.rng.genrand_int(
+                            0,
+                            newKaryotype[i].length
+                        );
+                        moved = true;
+                        newKaryotype[j].splice(index, 0, gene);
+                        break;
+                    }
+                }
+
+                if (!moved) {
+                    newKaryotype[i].push(gene);
+                }
             }
         }
-
-        return [newChr1, newChr2];
+        return new Genome(newKaryotype);
     }
 
     static geneLoss(chr) {
-        let newChr = [...chr];
+        let newChr = [];
 
-        for (let i = 0; i < chr.length; i++) {
-            if (sim.rng.random() < sim.config.gene_loss_rate) {
-                newChr.splice(i, 1);
+        for (let gene of chr) {
+            if (sim.rng.random() >= sim.config.gene_loss_rate) {
+                newChr.push(gene);
             }
         }
 
@@ -55,38 +60,51 @@ export class Genome {
     static geneGain(chr) {
         let newChr = [...chr];
 
-        for (let gene in Gene.genes) {
-            if (sim.rng.random() < sim.config.gene_gain_rate) {
-                newChr.push(new Gene(gene, Gene.genes[gene]));
-            }
+        if (sim.rng.random() < sim.config.gene_gain_rate) {
+            let gene = Object.keys(Gene.genes)[
+                sim.rng.genrand_int(0, Object.keys(Gene.genes).length)
+            ];
+            let index = sim.rng.genrand_int(0, newChr.length);
+            newChr.splice(index, 0, new Gene(gene, Gene.genes[gene]));
         }
 
         return newChr;
     }
 
-    static horizontalTransfer(genome1, genome2) {
-        if (!genome1.acc || !genome2.acc) return [genome1, genome2];
-
-        let newGenome1 = new Genome(genome1.core, genome1.acc);
-        let newGenome2 = new Genome(genome2.core, genome2.acc);
-
-        if (newGenome1.acc.length > 0 && newGenome2.acc.length == 0) {
-            for (let gene of newGenome1.acc) {
-                newGenome2.acc.push(new Gene(gene.name, gene.type));
-            }
-
-            if (sim.config.hgt_mode == "cut") {
-                newGenome1.acc = [];
-            }
-        } else if (newGenome1.acc.length == 0 && newGenome2.acc.length > 0) {
-            for (let gene of newGenome2.acc) {
-                newGenome1.acc.push(new Gene(gene.name, gene.type));
-            }
-
-            if (sim.config.hgt_mode == "cut") {
-                newGenome2.acc = [];
+    static chromosomeLoss(genome) {
+        let chrs = [];
+        for (let chr of genome.karyotype) {
+            if (sim.rng.random() >= sim.config.chromosome_loss_rate) {
+                chrs.push(chr);
             }
         }
+
+        return new Genome(chrs);
+    }
+
+    static horizontalTransfer(genome1, genome2) {
+
+        console.log(genome1)
+        console.log(genome2)
+        let newGenome1 = new Genome(deepCopyArray(genome1.karyotype));
+        let newGenome2 = new Genome(deepCopyArray(genome2.karyotype));
+
+        if (newGenome1.karyotype.length > 1 && newGenome2.karyotype.length == 1) {
+            newGenome2.karyotype.push([...newGenome1.karyotype[1]])
+
+            if(sim.config.hgt_mode == "cut"){
+                newGenome1.karyotype.splice(1,1)
+            }
+        } else if (newGenome2.karyotype.length > 1 && newGenome1.karyotype.length == 1) {
+            newGenome1.karyotype.push([...newGenome2.karyotype[1]])
+
+            if(sim.config.hgt_mode == "cut"){
+                newGenome2.karyotype.splice(1,1)
+            }
+        }
+        
+        console.log(newGenome1)
+        console.log(newGenome2)
 
         return [newGenome1, newGenome2];
     }
@@ -98,29 +116,13 @@ export class Genome {
 
         if (genes.length == 0) return false;
 
-        if (this.core) {
+        for (let chr of this.karyotype) {
             let temp = [];
 
             for (let gene of genes) {
                 let found = false;
 
-                for (let g of this.core) {
-                    if (g.name == gene) found = true;
-                }
-
-                if (!found) temp.push(gene);
-            }
-
-            genes = [...temp];
-        }
-
-        if (this.acc) {
-            let temp = [];
-
-            for (let gene of genes) {
-                let found = false;
-
-                for (let g of this.acc) {
+                for (let g of chr) {
                     if (g.name == gene) found = true;
                 }
 

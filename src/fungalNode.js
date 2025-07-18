@@ -56,15 +56,11 @@ export class Tip extends fungalNode {
         if (plant) {
             let pathoGenes = [];
 
-            for (let gene of this.fungus.genome.core) {
-                if (gene.type == "pathogenicity") {
-                    pathoGenes.push(gene.name);
-                }
-            }
-
-            for (let gene of this.fungus.genome.acc) {
-                if (gene.type == "pathogenicity") {
-                    pathoGenes.push(gene.name);
+            for (let chr of this.fungus.genome.karyotype) {
+                for (let gene of chr) {
+                    if (gene.type == "pathogenicity") {
+                        pathoGenes.push(gene.name);
+                    }
                 }
             }
 
@@ -73,13 +69,7 @@ export class Tip extends fungalNode {
             }
         }
 
-        drawLine(
-            sim.field,
-            ["colour"],
-            [this.fungus.colour],
-            this.pos,
-            newPos
-        );
+        drawLine(sim.field, ["colour"], [this.fungus.colour], this.pos, newPos);
 
         if (
             pos_floored.x != newPos_floored.x ||
@@ -92,10 +82,10 @@ export class Tip extends fungalNode {
             this.parent.removeChild(this.id);
             node.addChild(this);
 
-            let gridPoint = sim.field.grid[node.pos.x][node.pos.y]
+            let gridPoint = sim.field.grid[node.pos.x][node.pos.y];
 
-            if(gridPoint.food){
-                this.fungus.cells.add(node)
+            if (gridPoint.food) {
+                this.fungus.cells.add(node);
             }
 
             gridPoint.nodes.add(node);
@@ -107,11 +97,11 @@ export class Tip extends fungalNode {
     }
 
     branch() {
-        let branchNode = this.parent
+        let branchNode = this.parent;
 
-        let currCell = sim.field.grid[branchNode.pos.x][branchNode.pos.y]
+        let currCell = sim.field.grid[branchNode.pos.x][branchNode.pos.y];
 
-        if(currCell.node_count >= 5) return null
+        if (currCell.node_count >= 5) return null;
 
         let newTip = new Tip(
             branchNode.pos,

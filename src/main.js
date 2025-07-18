@@ -4,10 +4,10 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js"
-import { hideBin } from "yargs/helpers";
+import { hideBin } from "yargs/helpers"; */
 
 // Configuration constant for the cacatoo simulation
 
@@ -63,21 +63,21 @@ const fusarium = (config) => {
 
         let pathogenicity = sample(["x", "y", "z"]);
 
-        let coreGenes = [
-            new Gene("a", Gene.genes.a),
-            new Gene("b", Gene.genes.b),
-            new Gene("c", Gene.genes.c),
+        let chromosomes = [
+            [
+                new Gene("a", Gene.genes.a),
+                new Gene("b", Gene.genes.b),
+                new Gene("c", Gene.genes.c),
+            ],
         ];
-
-        let mobileGenes = [];
 
         if (sim.rng.random() < sim.config.parasite_ratio) {
             if (sim.rng.random() < sim.config.mobile_ratio) {
-                mobileGenes.push(
-                    new Gene(pathogenicity, Gene.genes[pathogenicity])
-                );
+                chromosomes.push([
+                    new Gene(pathogenicity, Gene.genes[pathogenicity]),
+                ]);
             } else {
-                coreGenes.push(
+                chromosomes[0].push(
                     new Gene(pathogenicity, Gene.genes[pathogenicity])
                 );
             }
@@ -85,27 +85,18 @@ const fusarium = (config) => {
 
         for (let g of ["k", "l", "m"]) {
             if (sim.rng.random() < 0.33) {
-                coreGenes.push(new Gene(g, Gene.genes[g]));
+                chromosomes[0].push(new Gene(g, Gene.genes[g]));
             }
         }
 
-        let genome = {
-            core: coreGenes,
-            acc: mobileGenes,
-        };
-
         let colour = ["", "", ""];
 
-        for (let gene of genome.core) {
-            if (gene.name == "x") colour[0] = "x";
-            if (gene.name == "y") colour[1] = "y";
-            if (gene.name == "z") colour[2] = "z";
-        }
-
-        for (let gene of genome.acc) {
-            if (gene.name == "x") colour[0] = "x";
-            if (gene.name == "y") colour[1] = "y";
-            if (gene.name == "z") colour[2] = "z";
+        for (let chr of chromosomes) {
+            for (let gene of chr) {
+                if (gene.name == "x") colour[0] = "x";
+                if (gene.name == "y") colour[1] = "y";
+                if (gene.name == "z") colour[2] = "z";
+            }
         }
 
         colour = colour.join("");
@@ -113,7 +104,7 @@ const fusarium = (config) => {
         let fungus = new Fungus(
             pos,
             colour == "" ? "none" : colour,
-            genome,
+            new Genome(chromosomes),
             200,
             sim.config.fungus_uptake,
             sim.config.fungus_upkeep
@@ -128,18 +119,18 @@ const fusarium = (config) => {
 
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
-            let geneList = [];
+            let chr = [];
 
             let genes = sample(["xy", "xz", "yz"]);
 
             for (let g of genes) {
-                geneList.push(new Gene(g, Gene.genes[g]));
+                chr.push(new Gene(g, Gene.genes[g]));
             }
 
             let plant = new Plant(
                 { x, y },
                 sim.rng.genrand_int(1000, 4000),
-                geneList,
+                chr,
                 sim.config.plant_production,
                 sim.config.plant_upkeep
             );
@@ -337,7 +328,7 @@ const fusarium = (config) => {
                         let newPlant = new Plant(
                             p,
                             1000,
-                            neigh.genome.core,
+                            neigh.genome.karyotype,
                             neigh.resources.production,
                             neigh.resources.upkeep
                         );

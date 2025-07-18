@@ -6,12 +6,12 @@ import { clamp, drawLine, drawSpot, idGenerator, Vector } from "./util.js";
 let genID = idGenerator();
 
 export default class Plant {
-    constructor(pos, resource, genes, production, upkeep) {
+    constructor(pos, resource, chr, production, upkeep) {
         this.id = genID.next().value;
-        this.genome = new Genome(genes);
+        this.genome = new Genome([chr]);
 
         this.pColour = "";
-        for (let gene of this.genome.core) {
+        for (let gene of this.genome.karyotype[0]) {
             this.pColour += gene.name;
         }
 
