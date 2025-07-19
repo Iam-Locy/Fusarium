@@ -4,10 +4,10 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
-import yargs_options from "./options.js"
-import { hideBin } from "yargs/helpers"; */
+import yargs_options from "./options.js";
+import { hideBin } from "yargs/helpers";
 
 // Configuration constant for the cacatoo simulation
 
@@ -19,7 +19,7 @@ const fusarium = (config) => {
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
 
-    config.maxtime = config.season_len * config.max_season;
+    config.maxtime = config.season_len * config.max_season + 1;
     sim = new Simulation(config);
     sim.setupRandom();
 
@@ -146,6 +146,7 @@ const fusarium = (config) => {
         setupDisplays(sim);
     }
 
+
     sim.field.update = () => {
         if (typeof window === "object") {
         }
@@ -156,23 +157,30 @@ const fusarium = (config) => {
             }
 
             if (typeof window === "object") {
+                if (sim.time % sim.config.season_len == 0) {
+                    
+                    sim.field.resetPlots();
+                }
+
                 let fungiRes = [];
 
                 for (let fungus of allFungi) {
                     fungiRes.push(fungus.resources.amount);
                 }
 
-                let coloursF = ["red"];
-
-                for (let i = 0; i < allFungi.length - 1; i++) {
-                    coloursF.push("grey");
-                }
-
                 sim.field.plotArray(
                     ["Amount"],
                     fungiRes,
-                    coloursF,
-                    "Fungi resources"
+                    new Array(allFungi.length).fill("grey"),
+                    "Fungi resources",
+                    {
+                        showLabelsOnHighlight: false,
+                        highlightSeriesOpts: {
+                            strokeWidth: 5,
+                            strokeBorderWidth: 1,
+                            highlightCircleSize: 1,
+                        },
+                    }
                 );
 
                 let plantRes = [];
@@ -181,17 +189,19 @@ const fusarium = (config) => {
                     plantRes.push(plant.resources.amount);
                 }
 
-                let coloursP = ["red"];
-
-                for (let i = 0; i < allPlants.length - 1; i++) {
-                    coloursP.push("grey");
-                }
-
                 sim.field.plotArray(
                     ["Amount"],
                     plantRes,
-                    coloursP,
-                    "Plants resources"
+                    new Array(allPlants.length).fill("grey"),
+                    "Plants resources",
+                    {
+                        showLabelsOnHighlight: false,
+                        highlightSeriesOpts: {
+                            strokeWidth: 5,
+                            strokeBorderWidth: 1,
+                            highlightCircleSize: 1,
+                        },
+                    }
                 );
             }
         }
@@ -373,6 +383,7 @@ const fusarium = (config) => {
     sim.addButton("Toggle", function () {
         sim.toggle_play();
     });
+
     sim.start();
 };
 
@@ -395,10 +406,9 @@ const log = (sim, plants, fungi) => {
 
     for (let p of plants) {
         let genome = "";
-        for (let g of p.genome.core) {
+        for (let g of p.genome.karyotype[0]) {
             genome += g.name;
         }
-
         plantOut += `${p.id};${genome};${p.resources.amount}\t`;
     }
 
@@ -408,13 +418,15 @@ const log = (sim, plants, fungi) => {
 
     for (let f of fungi) {
         let genomeC = "";
-        for (let g of f.genome.core) {
+        for (let g of f.genome.karyotype[0]) {
             genomeC += g.name;
         }
 
         let genomeA = "";
-        for (let g of f.genome.acc) {
-            genomeA += g.name;
+        if (f.genome.karyotype.length > 1) {
+            for (let g of f.genome.karyotype[1]) {
+                genomeA += g.name;
+            }
         }
 
         let hosts = "";

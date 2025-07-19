@@ -83,28 +83,28 @@ export class Genome {
     }
 
     static horizontalTransfer(genome1, genome2) {
-
-        console.log(genome1)
-        console.log(genome2)
         let newGenome1 = new Genome(deepCopyArray(genome1.karyotype));
         let newGenome2 = new Genome(deepCopyArray(genome2.karyotype));
 
-        if (newGenome1.karyotype.length > 1 && newGenome2.karyotype.length == 1) {
-            newGenome2.karyotype.push([...newGenome1.karyotype[1]])
+        if (
+            newGenome1.karyotype.length > 1 &&
+            newGenome2.karyotype.length == 1
+        ) {
+            newGenome2.karyotype.push([...newGenome1.karyotype[1]]);
 
-            if(sim.config.hgt_mode == "cut"){
-                newGenome1.karyotype.splice(1,1)
+            if (sim.config.hgt_mode == "cut") {
+                newGenome1.karyotype.splice(1, 1);
             }
-        } else if (newGenome2.karyotype.length > 1 && newGenome1.karyotype.length == 1) {
-            newGenome1.karyotype.push([...newGenome2.karyotype[1]])
+        } else if (
+            newGenome2.karyotype.length > 1 &&
+            newGenome1.karyotype.length == 1
+        ) {
+            newGenome1.karyotype.push([...newGenome2.karyotype[1]]);
 
-            if(sim.config.hgt_mode == "cut"){
-                newGenome2.karyotype.splice(1,1)
+            if (sim.config.hgt_mode == "cut") {
+                newGenome2.karyotype.splice(1, 1);
             }
         }
-        
-        console.log(newGenome1)
-        console.log(newGenome2)
 
         return [newGenome1, newGenome2];
     }
