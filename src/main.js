@@ -117,14 +117,29 @@ const fusarium = (config) => {
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
+    let plantGenotypes = [];
+
+    for (let i = 0; i < sim.config.plant_genes.length; i++) {
+        plantGenotypes.push(`${sim.config.plant_genes[i]}`);
+        for (let j = i + 1; j < sim.config.plant_genes.length; j++) {
+            plantGenotypes.push(
+                `${sim.config.plant_genes[i] ? sim.config.plant_genes[i] : ""}${
+                    sim.config.plant_genes[j] ? sim.config.plant_genes[j] : ""
+                }`
+            );
+        }
+    }
+
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
-            let genes = sample(["xy", "xz", "yz"]);
+            let genes = sample(plantGenotypes);
 
-            for (let g of genes) {
-                chr.push(new Gene(g, Gene.genes[g]));
+            if (genes) {
+                for (let g of genes) {
+                    chr.push(new Gene(g, Gene.genes[g]));
+                }
             }
 
             let plant = new Plant(
@@ -146,19 +161,21 @@ const fusarium = (config) => {
         setupDisplays(sim);
     }
 
-
     sim.field.update = () => {
-        if (typeof window === "object") {
-        }
-
         if (sim.time % (sim.config.season_len / 10) == 0) {
             if (typeof process === "object") {
                 log(sim, plants, fungi);
+
+                if (
+                    sim.time ===
+                    sim.config.max_season * sim.config.season_len
+                ) {
+                    writeGrids(sim);
+                }
             }
 
             if (typeof window === "object") {
                 if (sim.time % sim.config.season_len == 0) {
-                    
                     sim.field.resetPlots();
                 }
 
@@ -232,9 +249,8 @@ const fusarium = (config) => {
                     }
                 }
 
-                let nSpores = Math.ceil(
-                    (fungus.resources.amount * fungus.hypha.nodeCount) **
-                        sim.config.sporulation_exponent
+                let nSpores = Math.floor(
+                    fungus.hypha.nodeCount ** sim.config.sporulation_exponent
                 );
 
                 for (let i = 0; i < nSpores; i++) {
@@ -338,7 +354,7 @@ const fusarium = (config) => {
                         let newPlant = new Plant(
                             p,
                             1000,
-                            neigh.genome.karyotype,
+                            neigh.genome.karyotype[0],
                             neigh.resources.production,
                             neigh.resources.upkeep
                         );
@@ -400,7 +416,11 @@ const log = (sim, plants, fungi) => {
         `parasite_${sim.config.parasite_ratio}_` +
         `hgt_${sim.config.hgt_rate}_` +
         `mode_${sim.config.hgt_mode}_` +
+        `loss_${sim.config.gene_loss_rate}_` +
+        `gain_${sim.config.gene_gain_rate}_` +
+        `chrLoss_${sim.config.chromosome_loss_rate}_` +
         `relocation_${sim.config.relocation_rate}_` +
+        `pGenes_${sim.config.plant_genes}_` +
         `sPlant_${sim.config.plant_scale}`;
     let plantOut = "";
 
@@ -409,7 +429,9 @@ const log = (sim, plants, fungi) => {
         for (let g of p.genome.karyotype[0]) {
             genome += g.name;
         }
-        plantOut += `${p.id};${genome};${p.resources.amount}\t`;
+        plantOut += `P:${p.id};G:${genome};R:${p.resources.amount.toFixed(
+            2
+        )}\t`;
     }
 
     sim.write_append(`${plantOut}\n`, `${fileName}_plants.txt`);
@@ -418,6 +440,7 @@ const log = (sim, plants, fungi) => {
 
     for (let f of fungi) {
         let genomeC = "";
+
         for (let g of f.genome.karyotype[0]) {
             genomeC += g.name;
         }
@@ -436,10 +459,67 @@ const log = (sim, plants, fungi) => {
 
         hosts = hosts.substring(0, hosts.length - 1);
 
-        fungusOut += `F:${f.id};C:${genomeC};A:${genomeA};R:${f.resources.amount};S:${f.hypha.nodeCount};H:${hosts}\t`;
+        fungusOut += `F:${
+            f.id
+        };C:${genomeC};A:${genomeA};R:${f.resources.amount.toFixed(2)};S:${
+            f.hypha.nodeCount
+        };H:${hosts}\t`;
     }
 
     sim.write_append(`${fungusOut}\n`, `${fileName}_fungi.txt`);
+};
+
+const writeGrids = (sim) => {
+    let fileName =
+        "./output/" +
+        `Seed_${sim.config.seed}_` +
+        `mSeason_${sim.config.max_season}_` +
+        `tilling_${sim.config.tilling}_` +
+        `sporeExp_${sim.config.sporulation_exponent}_` +
+        `uptake_${sim.config.fungus_uptake}_` +
+        `phi_${sim.config.phi}_` +
+        `mobile_${sim.config.mobile_ratio}_` +
+        `parasite_${sim.config.parasite_ratio}_` +
+        `hgt_${sim.config.hgt_rate}_` +
+        `mode_${sim.config.hgt_mode}_` +
+        `loss_${sim.config.gene_loss_rate}_` +
+        `gain_${sim.config.gene_gain_rate}_` +
+        `chrLoss_${sim.config.chromosome_loss_rate}_` +
+        `relocation_${sim.config.relocation_rate}_` +
+        `pGenes_${sim.config.plant_genes}_` +
+        `sPlant_${sim.config.plant_scale}`;
+
+    let fungiOut = "X;Y;IDs";
+    let plantsOut = "X;Y;ID";
+
+    for (let i = 0; i < sim.field.nc; i++) {
+        for (let j = 0; j < sim.field.nr; j++) {
+            let fungiLine = `\n${i};${j}`;
+            let fungi = new Set([]);
+
+            for (let node of sim.field.grid[i][j].nodes) {
+                fungi.add(node.fungus.id);
+            }
+
+            if (fungi.size == 0) continue;
+
+            for (let id of fungi) {
+                fungiLine += `;${id}`;
+            }
+
+            fungiOut += fungiLine;
+        }
+    }
+
+    for (let i = 0; i < sim.plants.nc; i++) {
+        for (let j = 0; j < sim.plants.nr; j++) {
+            let plant = sim.plants.grid[i][j].plant;
+            plantsOut += `\n${i};${j};${plant ? plant.id : ""}`;
+        }
+    }
+
+    sim.write_append(fungiOut, `${fileName}_fungiGrid.txt`);
+    sim.write_append(plantsOut, `${fileName}_plantsGrid.txt`);
 };
 
 // Run the simulation

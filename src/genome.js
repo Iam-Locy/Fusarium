@@ -62,7 +62,7 @@ export class Genome {
 
         if (sim.rng.random() < sim.config.gene_gain_rate) {
             let gene = Object.keys(Gene.genes)[
-                sim.rng.genrand_int(0, Object.keys(Gene.genes).length)
+                sim.rng.genrand_int(0, Object.keys(Gene.genes).length-1)
             ];
             let index = sim.rng.genrand_int(0, newChr.length);
             newChr.splice(index, 0, new Gene(gene, Gene.genes[gene]));
@@ -142,6 +142,9 @@ export class Genome {
 
 export class Gene {
     constructor(name, type) {
+        if(!name){
+            throw new Error("FUCK!")
+        }
         this.name = name;
         this.type = type;
     }

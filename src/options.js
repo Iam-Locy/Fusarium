@@ -125,6 +125,11 @@ export default {
         alias: "pk",
         description: "The resource consuption rate of the plants.",
         type: "number"
+    },
+    "plant_genes":{
+        alias: "pg",
+        description: "The resistance genes available for the plants",
+        type: "string"
     }
 
 

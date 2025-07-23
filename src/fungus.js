@@ -84,8 +84,7 @@ export default class Fungus {
 
                 if (sim.config.expected_spores_display) {
                     sim.field.grid[pos.x][pos.y].eSpores =
-                        (this.resources.amount * this.hypha.nodeCount) **
-                        sim.config.sporulation_exponent;
+                        Math.floor(this.hypha.nodeCount ** sim.config.sporulation_exponent);
                 }
             }
         }
@@ -124,7 +123,7 @@ export default class Fungus {
             newGenome = Genome.cutNPaste(newGenome);
         }
 
-        newGenome = Genome.chromosomeLoss(newGenome)
+        newGenome = Genome.chromosomeLoss(newGenome);
 
         let colour = ["", "", ""];
 
