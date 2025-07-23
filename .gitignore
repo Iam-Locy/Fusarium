@@ -132,6 +132,6 @@ dist
 #Other
 data/
 figures/
-output/
+
 *.zip
 *.txt
