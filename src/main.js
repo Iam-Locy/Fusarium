@@ -4,10 +4,10 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js";
-import { hideBin } from "yargs/helpers";
+import { hideBin } from "yargs/helpers"; */
 
 // Configuration constant for the cacatoo simulation
 
@@ -119,14 +119,22 @@ const fusarium = (config) => {
 
     let plantGenotypes = [];
 
-    for (let i = 0; i < sim.config.plant_genes.length; i++) {
-        plantGenotypes.push(`${sim.config.plant_genes[i]}`);
-        for (let j = i + 1; j < sim.config.plant_genes.length; j++) {
-            plantGenotypes.push(
-                `${sim.config.plant_genes[i] ? sim.config.plant_genes[i] : ""}${
-                    sim.config.plant_genes[j] ? sim.config.plant_genes[j] : ""
-                }`
-            );
+    if (sim.config.plant_genes != "none") {
+        for (let i = 0; i < sim.config.plant_genes.length; i++) {
+            plantGenotypes.push(`${sim.config.plant_genes[i]}`);
+            for (let j = i + 1; j < sim.config.plant_genes.length; j++) {
+                plantGenotypes.push(
+                    `${
+                        sim.config.plant_genes[i]
+                            ? sim.config.plant_genes[i]
+                            : ""
+                    }${
+                        sim.config.plant_genes[j]
+                            ? sim.config.plant_genes[j]
+                            : ""
+                    }`
+                );
+            }
         }
     }
 
@@ -412,6 +420,7 @@ const log = (sim, plants, fungi) => {
         `sporeExp_${sim.config.sporulation_exponent}_` +
         `uptake_${sim.config.fungus_uptake}_` +
         `phi_${sim.config.phi}_` +
+        `vgp_${sim.config.virulence_gene_penalty}_` +
         `mobile_${sim.config.mobile_ratio}_` +
         `parasite_${sim.config.parasite_ratio}_` +
         `hgt_${sim.config.hgt_rate}_` +
@@ -478,6 +487,7 @@ const writeGrids = (sim) => {
         `sporeExp_${sim.config.sporulation_exponent}_` +
         `uptake_${sim.config.fungus_uptake}_` +
         `phi_${sim.config.phi}_` +
+        `vgp_${sim.config.virulence_gene_penalty}_` +
         `mobile_${sim.config.mobile_ratio}_` +
         `parasite_${sim.config.parasite_ratio}_` +
         `hgt_${sim.config.hgt_rate}_` +

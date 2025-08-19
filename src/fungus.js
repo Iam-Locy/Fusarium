@@ -68,7 +68,20 @@ export default class Fungus {
             }
         }
 
-        this.resources.amount -= this.hypha.nodeCount * this.resources.upkeep;
+        let virulence_gene_count = 0;
+
+        for (let chromosome of this.genome.karyotype) {
+            for (let gene of chromosome) {
+                if (gene.type == "pathogenicity") {
+                    virulence_gene_count += 1;
+                }
+            }
+        }
+
+        this.resources.amount -=
+            this.hypha.nodeCount *
+            (this.resources.upkeep +
+                virulence_gene_count * sim.config.virulence_gene_penalty);
 
         if (
             typeof window === "object" &&
@@ -83,8 +96,9 @@ export default class Fungus {
                 }
 
                 if (sim.config.expected_spores_display) {
-                    sim.field.grid[pos.x][pos.y].eSpores =
-                        Math.floor(this.hypha.nodeCount ** sim.config.sporulation_exponent);
+                    sim.field.grid[pos.x][pos.y].eSpores = Math.floor(
+                        this.hypha.nodeCount ** sim.config.sporulation_exponent
+                    );
                 }
             }
         }

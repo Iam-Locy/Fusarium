@@ -70,6 +70,11 @@ export default {
         description: "The multiplier for the uptake from plants of parasitic nodes.",
         type: "number"
     },
+    "virulence_gene_penalty":{
+        alias: "vgp",
+        description: "The added metabolic cost per virulence gene per node.",
+        type: "number"
+    },
     "mobile_ratio":{
         alias: "mr",
         description: "The ratio of parasites with accessory chromosome at the start.",
@@ -128,7 +133,7 @@ export default {
     },
     "plant_genes":{
         alias: "pg",
-        description: "The resistance genes available for the plants",
+        description: "The resistance genes available for the plants. If you want the plants to be susceptible to all pathogens type \"none\".",
         type: "string"
     }
 
