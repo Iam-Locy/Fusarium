@@ -414,23 +414,23 @@ const fusarium = (config) => {
 const log = (sim, plants, fungi) => {
     let fileName =
         "./output/" +
-        `Seed_${sim.config.seed}_` +
-        `mSeason_${sim.config.max_season}_` +
-        `tilling_${sim.config.tilling}_` +
-        `sporeExp_${sim.config.sporulation_exponent}_` +
-        `uptake_${sim.config.fungus_uptake}_` +
-        `phi_${sim.config.phi}_` +
+        `s_${sim.config.seed}_` +
+        `ms_${sim.config.max_season}_` +
+        `t_${sim.config.tilling}_` +
+        `se_${sim.config.sporulation_exponent}_` +
+        `u_${sim.config.fungus_uptake}_` +
+        `ph_${sim.config.phi}_` +
         `vgp_${sim.config.virulence_gene_penalty}_` +
-        `mobile_${sim.config.mobile_ratio}_` +
-        `parasite_${sim.config.parasite_ratio}_` +
+        `mr_${sim.config.mobile_ratio}_` +
+        `pr_${sim.config.parasite_ratio}_` +
         `hgt_${sim.config.hgt_rate}_` +
-        `mode_${sim.config.hgt_mode}_` +
-        `loss_${sim.config.gene_loss_rate}_` +
-        `gain_${sim.config.gene_gain_rate}_` +
-        `chrLoss_${sim.config.chromosome_loss_rate}_` +
-        `relocation_${sim.config.relocation_rate}_` +
-        `pGenes_${sim.config.plant_genes}_` +
-        `sPlant_${sim.config.plant_scale}`;
+        `hm_${sim.config.hgt_mode}_` +
+        `lr_${sim.config.gene_loss_rate}_` +
+        `gr_${sim.config.gene_gain_rate}_` +
+        `clr_${sim.config.chromosome_loss_rate}_` +
+        `rlr_${sim.config.relocation_rate}_` +
+        `pg_${sim.config.plant_genes}_` 
+        
     let plantOut = "";
 
     for (let p of plants) {
@@ -481,23 +481,22 @@ const log = (sim, plants, fungi) => {
 const writeGrids = (sim) => {
     let fileName =
         "./output/" +
-        `Seed_${sim.config.seed}_` +
-        `mSeason_${sim.config.max_season}_` +
-        `tilling_${sim.config.tilling}_` +
-        `sporeExp_${sim.config.sporulation_exponent}_` +
-        `uptake_${sim.config.fungus_uptake}_` +
-        `phi_${sim.config.phi}_` +
+        `s_${sim.config.seed}_` +
+        `ms_${sim.config.max_season}_` +
+        `t_${sim.config.tilling}_` +
+        `se_${sim.config.sporulation_exponent}_` +
+        `u_${sim.config.fungus_uptake}_` +
+        `ph_${sim.config.phi}_` +
         `vgp_${sim.config.virulence_gene_penalty}_` +
-        `mobile_${sim.config.mobile_ratio}_` +
-        `parasite_${sim.config.parasite_ratio}_` +
+        `mr_${sim.config.mobile_ratio}_` +
+        `pr_${sim.config.parasite_ratio}_` +
         `hgt_${sim.config.hgt_rate}_` +
-        `mode_${sim.config.hgt_mode}_` +
-        `loss_${sim.config.gene_loss_rate}_` +
-        `gain_${sim.config.gene_gain_rate}_` +
-        `chrLoss_${sim.config.chromosome_loss_rate}_` +
-        `relocation_${sim.config.relocation_rate}_` +
-        `pGenes_${sim.config.plant_genes}_` +
-        `sPlant_${sim.config.plant_scale}`;
+        `hm_${sim.config.hgt_mode}_` +
+        `lr_${sim.config.gene_loss_rate}_` +
+        `gr_${sim.config.gene_gain_rate}_` +
+        `clr_${sim.config.chromosome_loss_rate}_` +
+        `rlr_${sim.config.relocation_rate}_` +
+        `pg_${sim.config.plant_genes}_` 
 
     let fungiOut = "X;Y;IDs";
     let plantsOut = "X;Y;ID";

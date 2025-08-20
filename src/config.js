@@ -28,7 +28,7 @@ export default {
     },
     season_len: 1000,               // Number of timesteps (ts) in one season
     max_season: 150,                // Number of seasons
-    tilling: true,                  // Mixing the grid between seasons
+    tilling: false,                  // Mixing the grid between seasons
 
     //Settings for the Fungus class
     spores: 100,                      // Number of starting spores

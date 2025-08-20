@@ -66,7 +66,7 @@ export default {
         type: "number"
     },
     "phi":{
-        alias: "p",
+        alias: "ph",
         description: "The multiplier for the uptake from plants of parasitic nodes.",
         type: "number"
     },
@@ -86,7 +86,7 @@ export default {
         type: "number"
     },
     "hgt_rate":{
-        alias: "hr",
+        alias: "hgt",
         description: "The chance of horizontal chromosome transfer at the end of the season.",
         type: "number"
     },
