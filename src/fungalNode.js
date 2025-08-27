@@ -69,8 +69,7 @@ export class Tip extends fungalNode {
             }
         }
 
-        drawLine(sim.field, ["colour"], [this.fungus.colour], this.pos, newPos);
-
+        
         if (
             pos_floored.x != newPos_floored.x ||
             pos_floored.y != newPos_floored.y
@@ -91,6 +90,8 @@ export class Tip extends fungalNode {
             gridPoint.nodes.add(node);
             gridPoint.node_count += 1;
         }
+
+        drawLine(sim.field, ["colour"], [this.fungus.colour], this.pos, newPos);
 
         this.pos = newPos_wrapped;
         return true;

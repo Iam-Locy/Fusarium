@@ -167,10 +167,3 @@ export default class Fungus {
         return spore;
     }
 }
-
-const NEIGHBOUR_VECTORS = [
-    { x: 0, y: 1, rotation: Math.PI / 2 },
-    { x: -1, y: 0, rotation: Math.PI },
-    { x: 1, y: 0, rotation: 0 },
-    { x: 0, y: -1, rotation: (3 * Math.PI) / 2 },
-];
