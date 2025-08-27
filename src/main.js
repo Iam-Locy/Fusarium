@@ -258,7 +258,7 @@ const fusarium = (config) => {
                 }
 
                 let nSpores = Math.floor(
-                    fungus.hypha.nodeCount ** sim.config.sporulation_exponent
+                    fungus.hypha.nodeCount ** sim.config.sporogenic_exponent
                 );
 
                 for (let i = 0; i < nSpores; i++) {
@@ -417,7 +417,7 @@ const log = (sim, plants, fungi) => {
         `s_${sim.config.seed}_` +
         `ms_${sim.config.max_season}_` +
         `t_${sim.config.tilling}_` +
-        `se_${sim.config.sporulation_exponent}_` +
+        `se_${sim.config.sporogenic_exponent}_` +
         `u_${sim.config.fungus_uptake}_` +
         `ph_${sim.config.phi}_` +
         `vgp_${sim.config.virulence_gene_penalty}_` +
@@ -484,7 +484,7 @@ const writeGrids = (sim) => {
         `s_${sim.config.seed}_` +
         `ms_${sim.config.max_season}_` +
         `t_${sim.config.tilling}_` +
-        `se_${sim.config.sporulation_exponent}_` +
+        `se_${sim.config.sporogenic_exponent}_` +
         `u_${sim.config.fungus_uptake}_` +
         `ph_${sim.config.phi}_` +
         `vgp_${sim.config.virulence_gene_penalty}_` +

@@ -40,7 +40,7 @@ export default {
         description: "The number spores at the start of the simulation.",
         type: "number"
     },
-    "sporulation_exponent":{
+    "sporogenic_exponent":{
         alias: "se",
         description: "The exponent determining the number of spores produced by the fungi.",
         type: "number"

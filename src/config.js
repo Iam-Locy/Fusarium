@@ -32,7 +32,7 @@ export default {
 
     //Settings for the Fungus class
     spores: 100,                      // Number of starting spores
-    sporulation_exponent: 0.25,     // Exponent in the 
+    sporogenic_exponent: 0.25,     // Exponent in the 
                                     // f() = (resources * hypha_node_count) ** (s_e)
                                     // function which determines the number of spores produced by the fungal network
     branch_chance: 0.005,           // Chance of tip branching (per tip per ts)
