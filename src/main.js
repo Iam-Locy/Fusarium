@@ -64,7 +64,11 @@ const fusarium = (config) => {
         let pathogenicity = sample(Object.keys(Gene.pathogenicity_genes));
 
         let chromosomes = [
-            [...Object.keys(Gene.house_keeping_genes).map(key => new Gene(key, Gene.genes[key]))],
+            [
+                ...Object.keys(Gene.house_keeping_genes).map(
+                    (key) => new Gene(key, Gene.genes[key])
+                ),
+            ],
         ];
 
         if (sim.rng.random() < sim.config.parasite_ratio) {
@@ -95,23 +99,26 @@ const fusarium = (config) => {
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
-    let available_plant_genes = Object.keys(Gene.resistance_genes).slice(0, sim.config.plant_gene_pool_size)
+    let available_plant_genes = Object.keys(Gene.resistance_genes).slice(
+        0,
+        sim.config.plant_gene_pool_size
+    );
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
-            while(chr.length < sim.config.plant_gene_num){
-                let gene = sample(available_plant_genes)
-                
-                if(chr.includes(gene)) continue
+            while (chr.length < sim.config.plant_gene_num) {
+                let gene = sample(available_plant_genes);
 
-                chr.push(gene)
+                if (chr.includes(gene)) continue;
+
+                chr.push(gene);
             }
 
             let plant = new Plant(
                 { x, y },
                 sim.rng.genrand_int(1000, 4000),
-                chr.map(g => new Gene(g, Gene.genes[g])),
+                chr.map((g) => new Gene(g, Gene.genes[g])),
                 sim.config.plant_production,
                 sim.config.plant_upkeep
             );
@@ -193,13 +200,17 @@ const fusarium = (config) => {
             let new_fungi = [];
             let new_tips = [];
 
-            for (let x = 0; x < config.ncol; x++) {
-                for (let y = 0; y < config.nrow; y++) {
+            for (let x = 0; x < sim.field.nc; x++) {
+                for (let y = 0; y < sim.field.nr; y++) {
                     sim.field.grid[x][y].colour = 0;
                     sim.field.grid[x][y].nodes = new Set([]);
                     sim.field.grid[x][y].node_count = 0;
                     sim.field.grid[x][y].resources = 0;
                     sim.field.grid[x][y].eSpores = 0;
+                    sim.field.grid[x][y].plant = null;
+                    sim.field.grid[x][y].plant_node = null;
+                    sim.field.grid[x][y].health = 0;
+                    sim.field.grid[x][y].food = 0;
                 }
             }
 
@@ -292,59 +303,29 @@ const fusarium = (config) => {
         let newPlants = [];
 
         if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
-            let newPlantGrid = [...Array(sim.plants.grid.length)].map((e) =>
-                Array(sim.plants.grid[0].length).fill(null)
-            );
+            for (let x = 0; x < sim.plants.nc; x++) {
+                for (let y = 0; y < sim.plants.nr; y++) {
+                    let chr = [];
 
-            let positions = [];
+                    while (chr.length < sim.config.plant_gene_num) {
+                        let gene = sample(available_plant_genes);
 
-            for (let x = 0; x < plantNcol; x++) {
-                for (let y = 0; y < plantNrow; y++) {
-                    positions.push(new Vector(x, y));
-                }
-            }
+                        if (chr.includes(gene)) continue;
 
-            positions = shuffle(positions);
-
-            for (let p of positions) {
-                if (!sim.plants.grid[p.x][p.y].plant) {
-                    let neighs = sim.plants
-                        .getNeighbours8(this, p.x, p.y)
-                        .map((n) => {
-                            return n.plant;
-                        });
-
-                    let neigh = sample(neighs);
-
-                    if (neigh) {
-                        let newPlant = new Plant(
-                            p,
-                            1000,
-                            neigh.genome.karyotype[0],
-                            neigh.resources.production,
-                            neigh.resources.upkeep
-                        );
-
-                        newPlants.push(newPlant);
-
-                        newPlantGrid[p.y][p.x] = newPlant;
+                        chr.push(gene);
                     }
-                } else {
-                    newPlants.push(sim.plants.grid[p.x][p.y].plant);
-                    newPlantGrid[p.y][p.x] = sim.plants.grid[p.x][p.y].plant;
+
+                    let plant = new Plant(
+                        { x, y },
+                        sim.rng.genrand_int(1000, 4000),
+                        chr.map((g) => new Gene(g, Gene.genes[g])),
+                        sim.config.plant_production,
+                        sim.config.plant_upkeep
+                    );
+
+                    newPlants.push(plant);
                 }
             }
-
-            for (let x = 0; x < plantNcol; x++) {
-                for (let y = 0; y < plantNrow; y++) {
-                    if (newPlantGrid[y][x]) {
-                        sim.plants.grid[x][y].plant = newPlantGrid[y][x];
-                    } else {
-                        sim.plants.grid[x][y].plant = null;
-                    }
-                }
-            }
-
             allPlants = newPlants;
         } else {
             for (let plant of plants) {
