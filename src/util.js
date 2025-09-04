@@ -80,6 +80,14 @@ export function shuffle(array) {
     return array;
 }
 
+export function filterObject(obj, filter_func) {
+    return Object.assign(
+        ...Object.keys(obj)
+            .filter((key) => filter_func(obj[key]))
+            .map((key) => ({ [key]: obj[key] }))
+    );
+}
+
 export function deepCopyArray(arr) {
     let newArr = [];
 
