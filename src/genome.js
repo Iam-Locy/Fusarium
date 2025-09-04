@@ -1,5 +1,5 @@
 import { sim } from "./main.js";
-import { deepCopyArray, filterObject } from "./util.js";
+import { deepCopyArray, filterObject, sample } from "./util.js";
 
 export class Genome {
     constructor(karyotype) {
@@ -69,6 +69,42 @@ export class Genome {
         }
 
         return newChr;
+    }
+
+    static geneTransition(chr) {
+        let newChr = [];
+
+        for (let gene of chr) {
+            if (gene.type != "pathogenicity") {
+                newChr.push(gene);
+                continue;
+            }
+
+            if (sim.rng.random() >= sim.config.gene_transition_rate) {
+                newChr.push(gene);
+                continue;
+            }
+
+            if(sim.rng.random() < sim.config.neutralization_rate){
+                let name = "n"+gene.name.slice(1)
+
+                newChr.push(new Gene(name, Gene.genes[name]))
+                continue;
+            }
+
+            let new_gene = gene
+
+            while(new_gene.name == gene.name){
+                let g = sample(Object.keys(Gene.pathogenicity_genes))
+
+                new_gene = new Gene(g, Gene.genes[g])
+                
+            }
+
+            newChr.push(new_gene)
+        }
+
+        return newChr
     }
 
     static chromosomeLoss(genome) {
@@ -145,8 +181,8 @@ export class Gene {
         this.name = name;
         this.type = type;
 
-        if(type === "resistance"){
-            this.target = "p" + name.slice(1)
+        if (type === "resistance") {
+            this.target = "p" + name.slice(1);
         }
     }
 
@@ -177,8 +213,20 @@ export class Gene {
         n6: "neutral",
     };
 
-    
-    static house_keeping_genes = filterObject(Gene.genes, type => type == "house_keeping")
-    static pathogenicity_genes = filterObject(Gene.genes, type => type == "pathogenicity")
-    static neutral_genes = filterObject(Gene.genes, type => type == "neutral")
+    static house_keeping_genes = filterObject(
+        Gene.genes,
+        (type) => type == "house_keeping"
+    );
+    static pathogenicity_genes = filterObject(
+        Gene.genes,
+        (type) => type == "pathogenicity"
+    );
+    static neutral_genes = filterObject(
+        Gene.genes,
+        (type) => type == "neutral"
+    );
+    static resistance_genes = filterObject(
+        Gene.genes,
+        (type) => type == "resistance"
+    );
 }

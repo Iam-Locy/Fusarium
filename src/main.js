@@ -61,14 +61,10 @@ const fusarium = (config) => {
             y: sim.rng.genrand_int(0, config.nrow - 1),
         };
 
-        let pathogenicity = sample(["x", "y", "z"]);
+        let pathogenicity = sample(Object.keys(Gene.pathogenicity_genes));
 
         let chromosomes = [
-            [
-                new Gene("a", Gene.genes.a),
-                new Gene("b", Gene.genes.b),
-                new Gene("c", Gene.genes.c),
-            ],
+            [...Object.keys(Gene.house_keeping_genes).map(key => new Gene(key, Gene.genes[key]))],
         ];
 
         if (sim.rng.random() < sim.config.parasite_ratio) {
@@ -83,27 +79,9 @@ const fusarium = (config) => {
             }
         }
 
-        for (let g of ["k", "l", "m"]) {
-            if (sim.rng.random() < 0.33) {
-                chromosomes[0].push(new Gene(g, Gene.genes[g]));
-            }
-        }
-
-        let colour = ["", "", ""];
-
-        for (let chr of chromosomes) {
-            for (let gene of chr) {
-                if (gene.name == "x") colour[0] = "x";
-                if (gene.name == "y") colour[1] = "y";
-                if (gene.name == "z") colour[2] = "z";
-            }
-        }
-
-        colour = colour.join("");
-
         let fungus = new Fungus(
             pos,
-            colour == "" ? "none" : colour,
+            sim.rng.genrand_int(3, 15),
             new Genome(chromosomes),
             200,
             sim.config.fungus_uptake,
@@ -117,43 +95,23 @@ const fusarium = (config) => {
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
-    let plantGenotypes = [];
-
-    if (sim.config.plant_genes != "none") {
-        for (let i = 0; i < sim.config.plant_genes.length; i++) {
-            plantGenotypes.push(`${sim.config.plant_genes[i]}`);
-            for (let j = i + 1; j < sim.config.plant_genes.length; j++) {
-                plantGenotypes.push(
-                    `${
-                        sim.config.plant_genes[i]
-                            ? sim.config.plant_genes[i]
-                            : ""
-                    }${
-                        sim.config.plant_genes[j]
-                            ? sim.config.plant_genes[j]
-                            : ""
-                    }`
-                );
-            }
-        }
-    }
-
+    let available_plant_genes = Object.keys(Gene.resistance_genes).slice(0, sim.config.plant_gene_pool_size)
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
-            let genes = sample(plantGenotypes);
+            while(chr.length < sim.config.plant_gene_num){
+                let gene = sample(available_plant_genes)
+                
+                if(chr.includes(gene)) continue
 
-            if (genes) {
-                for (let g of genes) {
-                    chr.push(new Gene(g, Gene.genes[g]));
-                }
+                chr.push(gene)
             }
 
             let plant = new Plant(
                 { x, y },
                 sim.rng.genrand_int(1000, 4000),
-                chr,
+                chr.map(g => new Gene(g, Gene.genes[g])),
                 sim.config.plant_production,
                 sim.config.plant_upkeep
             );
@@ -429,8 +387,8 @@ const log = (sim, plants, fungi) => {
         `gr_${sim.config.gene_gain_rate}_` +
         `clr_${sim.config.chromosome_loss_rate}_` +
         `rlr_${sim.config.relocation_rate}_` +
-        `pg_${sim.config.plant_genes}_` 
-        
+        `pg_${sim.config.plant_genes}_`;
+
     let plantOut = "";
 
     for (let p of plants) {
@@ -496,7 +454,7 @@ const writeGrids = (sim) => {
         `gr_${sim.config.gene_gain_rate}_` +
         `clr_${sim.config.chromosome_loss_rate}_` +
         `rlr_${sim.config.relocation_rate}_` +
-        `pg_${sim.config.plant_genes}_` 
+        `pg_${sim.config.plant_genes}_`;
 
     let fungiOut = "X;Y;IDs";
     let plantsOut = "X;Y;ID";

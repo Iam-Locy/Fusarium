@@ -2,7 +2,7 @@ import { fungalNode, Tip } from "./fungalNode.js";
 import { clamp, deepCopyArray, idGenerator, Vector } from "./util.js";
 import { sim } from "./main.js";
 import { Tree } from "./tree.js";
-import { Genome } from "./genome.js";
+import { Genome, Gene } from "./genome.js";
 
 const genID = idGenerator();
 
@@ -130,6 +130,9 @@ export default class Fungus {
                 newGenome.karyotype[i] = Genome.geneGain(
                     newGenome.karyotype[i]
                 );
+                newGenome.karyotype[i] = Genome.geneTransition(
+                    newGenome.karyotype[i]
+                );
             }
         }
 
@@ -139,25 +142,13 @@ export default class Fungus {
 
         newGenome = Genome.chromosomeLoss(newGenome);
 
-        let colour = ["", "", ""];
-
-        for (let chr of newGenome.karyotype) {
-            for (let gene of chr) {
-                if (gene.name == "x") colour[0] = "x";
-                if (gene.name == "y") colour[1] = "y";
-                if (gene.name == "z") colour[2] = "z";
-            }
-        }
-
-        colour = colour.join("");
-
-        if (!newGenome.hasGenes("a", "b", "c")) {
+        if (!newGenome.hasGenes(Object.keys(Gene.house_keeping_genes))) {
             return false;
         }
 
         let spore = new Fungus(
             Vector.floored(pos),
-            colour == "" ? "none" : colour,
+            this.colour,
             newGenome,
             clamp(0, 200, this.resources.amount / nSpores),
             this.resources.uptake,

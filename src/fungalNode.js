@@ -54,22 +54,32 @@ export class Tip extends fungalNode {
         let plant = sim.field.grid[newPos_floored.x][newPos_floored.y].plant;
 
         if (plant) {
-            let pathoGenes = [];
+            let pathoGenes = new Set([]);
+            let resistGenes = new Set([]);
 
             for (let chr of this.fungus.genome.karyotype) {
                 for (let gene of chr) {
                     if (gene.type == "pathogenicity") {
-                        pathoGenes.push(gene.name);
+                        pathoGenes.add(gene.name);
                     }
                 }
             }
 
-            if (!plant.genome.hasGenes(pathoGenes) && pathoGenes.length > 0) {
-                this.fungus.hosts.add(plant);
+            if (pathoGenes.size > 0) {
+                for (let chr of plant.genome.karyotype) {
+                    for (let gene of chr) {
+                        if (pathoGenes.has(gene.target)) {
+                            resistGenes.add(gene.target);
+                        }
+                    }
+                }
+
+                if (pathoGenes.size > resistGenes.size) {
+                    this.fungus.hosts.add(plant);
+                }
             }
         }
 
-        
         if (
             pos_floored.x != newPos_floored.x ||
             pos_floored.y != newPos_floored.y

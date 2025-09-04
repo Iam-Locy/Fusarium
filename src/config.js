@@ -13,14 +13,14 @@ export default {
     //Settings of the simulation
     title: "Fusarium",
     description: "",
-    ncol: 1000,
-    nrow: 1000,
+    ncol: 500,
+    nrow: 500,
     wrap: [true, true],
     scale: 1,
     skip: 10,
     seed: Math.floor(Math.random() * 100),
     statecolours: {
-        colour: colourMap,
+        colour: 'random',
         pColour: colourMap,
         food: {
             1: "white",
@@ -44,11 +44,13 @@ export default {
                                     // Parasitic nodes take up (1 + phi) * uptake amount of resources
     virulence_gene_penalty: 0.0005, // The amount of extra cost per virulence gene per node per ts
     mobile_ratio: 0.5,              // Ratio of fungi with mobile genomic compartment (on which the pathogenicity gene resides)
-    parasite_ratio: 0.5,            // Ratio og fungi with pathogenicity gene
+    parasite_ratio: 1,              // Ratio og fungi with pathogenicity gene
     hgt_rate: 0.1,                  // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
     hgt_mode: "copy",               // Mode of hgt, it can be "copy" (copy-paste) or "cut" (cut&paste)
     gene_loss_rate: 0.01,           // Chance of losing a gene during sporulation
     gene_gain_rate: 0.01,           // Chance of gaining a gene during sporulation
+    gene_transition_rate: 0.05,
+    neutralization_rate: 0.5,
     chromosome_loss_rate: 0.05,     // Chance of losing a chromosome during sporulation
     relocation_rate: 0.02,          // Chance of genes moving between compartments during sporulation
 
@@ -56,7 +58,8 @@ export default {
     plant_scale: 100,               // The size of one cell on the plant grid
     plant_production: 0.02,         // Resource production rate of the plants
     plant_upkeep: 0.000005,         // Resource usage rate of the plants
-    plant_genes: "xyz",
+    plant_gene_pool_size: 6,
+    plant_gene_num: 2,
 
     //Display settings
     display_refresh: 100,           // Refresh rate of the resource heavy displays: accumulated resources and expected spores
@@ -65,6 +68,5 @@ export default {
     resources_display: false,
     resources_display_unit: 10,     // The unit multiplier for the accumulated resources display
     expected_spores_display: false,
-    plant_health_display: true,
-    plant_immunity_display: true
+    plant_health_display: true
 };
