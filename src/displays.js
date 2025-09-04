@@ -66,8 +66,4 @@ export default function setupDisplays(sim) {
             maxval: 1,
         });
     }
-
-    if (sim.config.plant_immunity_display) {
-        sim.createDisplay("field", "pColour", "Fusarium oxysporum mycelium");
-    }
 }
