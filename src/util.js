@@ -7,6 +7,20 @@ export function* idGenerator() {
     }
 }
 
+export function fileIDGenerator() {
+    let id = "";
+    let num = Date.now().toString().slice(0, 6);
+
+    for (let i = 0; i < 6; i += 2) {
+        id +=
+            String.fromCharCode(65 + sim.rng.genrand_int(0, 25)) +
+            num[i] +
+            num[i + 1];
+    }
+
+    return id;
+}
+
 export function sample(arr, probs = null) {
     probs = probs ? probs : new Array(arr.length).fill(1 / arr.length);
     let cdf = [];
