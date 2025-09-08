@@ -1,20 +1,23 @@
 import config from "./config.js";
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { sample, shuffle, Vector } from "./util.js";
+import { sample, shuffle, Vector, fileIDGenerator } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-/* import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
+import { makeIndex, log, writeGrids } from "./log.js";
+
+import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js";
-import { hideBin } from "yargs/helpers"; */
+import { hideBin } from "yargs/helpers";
+import fs from "fs";
 
 // Configuration constant for the cacatoo simulation
 
 export let sim;
 
 // Declaration of the simulation
-const fusarium = (config) => {
+const fusarium = async (config) => {
     let tips = []; //Array of updated hypha tips
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
@@ -137,13 +140,13 @@ const fusarium = (config) => {
     sim.field.update = () => {
         if (sim.time % (sim.config.season_len / 10) == 0) {
             if (typeof process === "object") {
-                log(sim, plants, fungi);
+                log(sim, plants, fungi, fileName);
 
                 if (
                     sim.time ===
                     sim.config.max_season * sim.config.season_len
                 ) {
-                    writeGrids(sim);
+                    writeGrids(sim, fileName);
                 }
             }
 
@@ -347,127 +350,11 @@ const fusarium = (config) => {
         sim.toggle_play();
     });
 
+    const fileID = fileIDGenerator();
+
+    const fileName = await makeIndex(sim, fileID);
+    
     sim.start();
-};
-
-const log = (sim, plants, fungi) => {
-    let fileName =
-        "./output/" +
-        `s_${sim.config.seed}_` +
-        `ms_${sim.config.max_season}_` +
-        `t_${sim.config.tilling}_` +
-        `se_${sim.config.sporogenic_exponent}_` +
-        `u_${sim.config.fungus_uptake}_` +
-        `ph_${sim.config.phi}_` +
-        `vgp_${sim.config.virulence_gene_penalty}_` +
-        `mr_${sim.config.mobile_ratio}_` +
-        `pr_${sim.config.parasite_ratio}_` +
-        `hgt_${sim.config.hgt_rate}_` +
-        `hm_${sim.config.hgt_mode}_` +
-        `lr_${sim.config.gene_loss_rate}_` +
-        `gr_${sim.config.gene_gain_rate}_` +
-        `clr_${sim.config.chromosome_loss_rate}_` +
-        `rlr_${sim.config.relocation_rate}_` +
-        `pg_${sim.config.plant_genes}_`;
-
-    let plantOut = "";
-
-    for (let p of plants) {
-        let genome = "";
-        for (let g of p.genome.karyotype[0]) {
-            genome += g.name;
-        }
-        plantOut += `P:${p.id};G:${genome};R:${p.resources.amount.toFixed(
-            2
-        )}\t`;
-    }
-
-    sim.write_append(`${plantOut}\n`, `${fileName}_plants.txt`);
-
-    let fungusOut = "";
-
-    for (let f of fungi) {
-        let genomeC = "";
-
-        for (let g of f.genome.karyotype[0]) {
-            genomeC += g.name;
-        }
-
-        let genomeA = "";
-        if (f.genome.karyotype.length > 1) {
-            for (let g of f.genome.karyotype[1]) {
-                genomeA += g.name;
-            }
-        }
-
-        let hosts = "";
-        for (let host of f.hosts) {
-            hosts += `${host.id},`;
-        }
-
-        hosts = hosts.substring(0, hosts.length - 1);
-
-        fungusOut += `F:${
-            f.id
-        };C:${genomeC};A:${genomeA};R:${f.resources.amount.toFixed(2)};S:${
-            f.hypha.nodeCount
-        };H:${hosts}\t`;
-    }
-
-    sim.write_append(`${fungusOut}\n`, `${fileName}_fungi.txt`);
-};
-
-const writeGrids = (sim) => {
-    let fileName =
-        "./output/" +
-        `s_${sim.config.seed}_` +
-        `ms_${sim.config.max_season}_` +
-        `t_${sim.config.tilling}_` +
-        `se_${sim.config.sporogenic_exponent}_` +
-        `u_${sim.config.fungus_uptake}_` +
-        `ph_${sim.config.phi}_` +
-        `vgp_${sim.config.virulence_gene_penalty}_` +
-        `mr_${sim.config.mobile_ratio}_` +
-        `pr_${sim.config.parasite_ratio}_` +
-        `hgt_${sim.config.hgt_rate}_` +
-        `hm_${sim.config.hgt_mode}_` +
-        `lr_${sim.config.gene_loss_rate}_` +
-        `gr_${sim.config.gene_gain_rate}_` +
-        `clr_${sim.config.chromosome_loss_rate}_` +
-        `rlr_${sim.config.relocation_rate}_` +
-        `pg_${sim.config.plant_genes}_`;
-
-    let fungiOut = "X;Y;IDs";
-    let plantsOut = "X;Y;ID";
-
-    for (let i = 0; i < sim.field.nc; i++) {
-        for (let j = 0; j < sim.field.nr; j++) {
-            let fungiLine = `\n${i};${j}`;
-            let fungi = new Set([]);
-
-            for (let node of sim.field.grid[i][j].nodes) {
-                fungi.add(node.fungus.id);
-            }
-
-            if (fungi.size == 0) continue;
-
-            for (let id of fungi) {
-                fungiLine += `;${id}`;
-            }
-
-            fungiOut += fungiLine;
-        }
-    }
-
-    for (let i = 0; i < sim.plants.nc; i++) {
-        for (let j = 0; j < sim.plants.nr; j++) {
-            let plant = sim.plants.grid[i][j].plant;
-            plantsOut += `\n${i};${j};${plant ? plant.id : ""}`;
-        }
-    }
-
-    sim.write_append(fungiOut, `${fileName}_fungiGrid.txt`);
-    sim.write_append(plantsOut, `${fileName}_plantsGrid.txt`);
 };
 
 // Run the simulation
