@@ -29,6 +29,7 @@ export default {
     season_len: 1000,               // Number of timesteps (ts) in one season
     max_season: 150,                // Number of seasons
     tilling: false,                  // Mixing the grid between seasons
+    crop_rotation_period: 1,
 
     //Settings for the Fungus class
     spores: 100,                      // Number of starting spores
@@ -48,8 +49,8 @@ export default {
     hgt_rate: 0.1,                  // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
     hgt_mode: "copy",               // Mode of hgt, it can be "copy" (copy-paste) or "cut" (cut&paste)
     gene_loss_rate: 0.01,           // Chance of losing a gene during sporulation
-    gene_gain_rate: 0.01,           // Chance of gaining a gene during sporulation
-    gene_transition_rate: 0.05,
+    gene_gain_rate: 0.005,           // Chance of gaining a gene during sporulation
+    gene_transition_rate: 0.02,
     neutralization_rate: 0.5,
     chromosome_loss_rate: 0.05,     // Chance of losing a chromosome during sporulation
     relocation_rate: 0.02,          // Chance of genes moving between compartments during sporulation
@@ -59,7 +60,7 @@ export default {
     plant_production: 0.02,         // Resource production rate of the plants
     plant_upkeep: 0.000005,         // Resource usage rate of the plants
     plant_gene_pool_size: 6,
-    plant_gene_num: 2,
+    plant_gene_num: 3,
 
     //Display settings
     display_refresh: 100,           // Refresh rate of the resource heavy displays: accumulated resources and expected spores

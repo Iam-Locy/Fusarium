@@ -4,14 +4,13 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector, fileIDGenerator } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
-import { makeIndex, log, writeGrids } from "./log.js";
 
+/*import { makeIndex, log, writeGrids } from "./log.js";
 import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js";
 import { hideBin } from "yargs/helpers";
-import fs from "fs";
-
+ */
 // Configuration constant for the cacatoo simulation
 
 export let sim;
@@ -64,7 +63,9 @@ const fusarium = async (config) => {
             y: sim.rng.genrand_int(0, config.nrow - 1),
         };
 
-        let pathogenicity = sample(Object.keys(Gene.pathogenicity_genes));
+        let pathogenicity = sample(
+            Object.keys(Gene.pathogenicity_genes).slice(0, 2)
+        );
 
         let chromosomes = [
             [
@@ -102,18 +103,14 @@ const fusarium = async (config) => {
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
-    let available_plant_genes = Object.keys(Gene.resistance_genes).slice(
-        0,
-        sim.config.plant_gene_pool_size
-    );
+    let toggle_plant_genes = false;
+
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
-            while (chr.length < sim.config.plant_gene_num) {
-                let gene = sample(available_plant_genes);
-
-                if (chr.includes(gene)) continue;
+            for (let i = 1; i <= 3; i++) {
+                let gene = `r${i + toggle_plant_genes * 3}`;
 
                 chr.push(gene);
             }
@@ -306,14 +303,16 @@ const fusarium = async (config) => {
         let newPlants = [];
 
         if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
+            if (sim.time % sim.config.crop_rotation_period == 0) {
+                toggle_plant_genes = !toggle_plant_genes;
+            }
+
             for (let x = 0; x < sim.plants.nc; x++) {
                 for (let y = 0; y < sim.plants.nr; y++) {
                     let chr = [];
 
-                    while (chr.length < sim.config.plant_gene_num) {
-                        let gene = sample(available_plant_genes);
-
-                        if (chr.includes(gene)) continue;
+                    for (let i = 1; i <= 3; i++) {
+                        let gene = `r${i + toggle_plant_genes * 3}`;
 
                         chr.push(gene);
                     }
@@ -350,11 +349,15 @@ const fusarium = async (config) => {
         sim.toggle_play();
     });
 
-    const fileID = fileIDGenerator();
+    if (typeof process == "object") {
+        const fileID = fileIDGenerator();
 
-    const fileName = await makeIndex(sim, fileID);
-    
-    sim.start();
+        const fileName = await makeIndex(sim, fileID);
+
+        sim.start();
+    } else {
+        sim.start();
+    }
 };
 
 // Run the simulation
