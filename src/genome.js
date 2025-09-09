@@ -85,37 +85,33 @@ export class Genome {
                 continue;
             }
 
-            if(sim.rng.random() < sim.config.neutralization_rate){
-                let name = "n"+gene.name.slice(1)
+            if (sim.rng.random() < sim.config.neutralization_rate) {
+                let name = "n" + gene.name.slice(1);
 
-                newChr.push(new Gene(name, Gene.genes[name]))
+                newChr.push(new Gene(name, Gene.genes[name]));
                 continue;
             }
 
-            let new_gene = gene
+            let new_gene = gene;
 
-            while(new_gene.name == gene.name){
-                let g = sample(Object.keys(Gene.pathogenicity_genes))
+            while (new_gene.name == gene.name) {
+                let g = sample(Object.keys(Gene.pathogenicity_genes));
 
-                new_gene = new Gene(g, Gene.genes[g])
-                
+                new_gene = new Gene(g, Gene.genes[g]);
             }
 
-            newChr.push(new_gene)
+            newChr.push(new_gene);
         }
 
-        return newChr
+        return newChr;
     }
 
     static chromosomeLoss(genome) {
-        let chrs = [];
-        for (let chr of genome.karyotype) {
-            if (sim.rng.random() >= sim.config.chromosome_loss_rate) {
-                chrs.push(chr);
-            }
+        if (sim.rng.random() < sim.config.chromosome_loss_rate) {
+            return new Genome([genome.karyotype[0]]);
         }
 
-        return new Genome(chrs);
+        return new Genome([genome.karyotype]);
     }
 
     static horizontalTransfer(genome1, genome2) {
