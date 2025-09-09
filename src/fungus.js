@@ -85,7 +85,8 @@ export default class Fungus {
 
         if (
             typeof window === "object" &&
-            sim.time % sim.config.display_refresh === 0
+            sim.time % sim.config.display_refresh === 0 &&
+            (sim.config.expected_spores_display || sim.config.resources_display)
         ) {
             for (let node of this.hypha.preOrderTraversal()) {
                 let pos = Vector.floored(node.pos);
@@ -141,6 +142,8 @@ export default class Fungus {
         }
 
         newGenome = Genome.chromosomeLoss(newGenome);
+
+       
 
         if (!newGenome.hasGenes(Object.keys(Gene.house_keeping_genes))) {
             return false;
