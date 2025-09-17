@@ -94,7 +94,7 @@ export class Tip extends fungalNode {
             let gridPoint = sim.field.grid[node.pos.x][node.pos.y];
 
             if (gridPoint.food) {
-                this.fungus.cells.add(node);
+                this.fungus.feeding_cells.add(node);
             }
 
             gridPoint.nodes.add(node);
@@ -112,7 +112,7 @@ export class Tip extends fungalNode {
 
         let currCell = sim.field.grid[branchNode.pos.x][branchNode.pos.y];
 
-        if (currCell.node_count >= 5) return null;
+        if (currCell.node_count >= sim.config.max_node_count) return null;
 
         let newTip = new Tip(
             branchNode.pos,

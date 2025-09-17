@@ -17,7 +17,7 @@ export default class Fungus {
             upkeep: upkeep,
         };
         this.tips = [];
-        this.cells = new Set([]);
+        this.feeding_cells = new Set([]);
         this.hypha = this.placeHypha(pos);
         this.hosts = new Set([]);
         this.connectedTo = new Set([]);
@@ -38,12 +38,12 @@ export default class Fungus {
     }
 
     vegetative() {
-        for (let cell of this.cells) {
+        for (let cell of this.feeding_cells) {
             let pos = cell.pos;
             let gridPoint = sim.field.grid[pos.x][pos.y];
 
             if (gridPoint.food == 0) {
-                this.cells.delete(cell);
+                this.feeding_cells.delete(cell);
                 continue;
             }
 
@@ -98,7 +98,7 @@ export default class Fungus {
 
                 if (sim.config.expected_spores_display) {
                     sim.field.grid[pos.x][pos.y].eSpores = Math.floor(
-                        this.hypha.nodeCount ** sim.config.sporulation_exponent
+                        this.hypha.nodeCount ** sim.config.sporogenic_exponent
                     );
                 }
             }
@@ -122,7 +122,6 @@ export default class Fungus {
 
     getSpore(pos, nSpores) {
         let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
-
         for (let i = 0; i < newGenome.karyotype.length; i++) {
             {
                 newGenome.karyotype[i] = Genome.geneLoss(
@@ -141,10 +140,11 @@ export default class Fungus {
             newGenome = Genome.cutNPaste(newGenome);
         }
 
+       
+
         newGenome = Genome.chromosomeLoss(newGenome);
 
        
-
         if (!newGenome.hasGenes(Object.keys(Gene.house_keeping_genes))) {
             return false;
         }
