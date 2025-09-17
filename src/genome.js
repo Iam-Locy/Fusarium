@@ -4,6 +4,7 @@ import { deepCopyArray, filterObject, sample } from "./util.js";
 export class Genome {
     constructor(karyotype) {
         this.karyotype = [];
+
         for (let chr of karyotype) {
             if (!Array.isArray(chr)) {
                 console.error(`${chr} in not an Array`);
@@ -61,9 +62,7 @@ export class Genome {
         let newChr = [...chr];
 
         if (sim.rng.random() < sim.config.gene_gain_rate) {
-            let gene = Object.keys(Gene.genes)[
-                sim.rng.genrand_int(0, Object.keys(Gene.genes).length - 1)
-            ];
+            let gene = sample(["h","p"]) + sim.rng.genrand_int(1,6)
             let index = sim.rng.genrand_int(0, newChr.length);
             newChr.splice(index, 0, new Gene(gene, Gene.genes[gene]));
         }
@@ -111,7 +110,7 @@ export class Genome {
             return new Genome([genome.karyotype[0]]);
         }
 
-        return new Genome([genome.karyotype]);
+        return genome;
     }
 
     static horizontalTransfer(genome1, genome2) {
@@ -142,6 +141,7 @@ export class Genome {
     }
 
     hasGenes(genes) {
+        
         if (!Array.isArray(genes)) {
             genes = [genes];
         }
@@ -156,6 +156,7 @@ export class Genome {
 
                 for (let g of chr) {
                     if (g.name == gene) found = true;
+                   
                 }
 
                 if (!found) temp.push(gene);

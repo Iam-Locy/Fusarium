@@ -1,141 +1,160 @@
 export default {
-    "ncol":{
+    ncol: {
         alias: "nc",
         description: "The width of the grid in pixels.",
-        type: "number"
+        type: "number",
     },
-    "nrow":{
-        alias: "nc",
+    nrow: {
+        alias: "nr",
         description: "The heigth of the grid in pixels.",
-        type: "number"
+        type: "number",
     },
-    "wrap":{
+    wrap: {
         alias: "w",
-        description: "Specifies wether the edges of the grid are wrapped. Usage: --wrap vertical horizontal.",
+        description:
+            "Specifies wether the edges of the grid are wrapped. Usage: --wrap vertical horizontal.",
         array: true,
-        type: "boolean"
+        type: "boolean",
     },
-    "seed":{
+    seed: {
         alias: "sd",
         description: "The seed number for the random generator",
-        type: "number"
+        type: "number",
     },
-    "season_len":{
+    season_len: {
         alias: "yl",
         description: "The length of one season.",
-        type: "number"
+        type: "number",
     },
-    "max_season":{
+    max_season: {
         alias: "ms",
         description: "The number of simulated season.",
-        type: "number"
+        type: "number",
     },
-    "tilling":{
+    tilling: {
         alias: "t",
         description: "Wether the grid is mixed at the start of the season.",
-        type: "boolean"
+        type: "boolean",
     },
-    "spores":{
+    crop_rotation_period: {
+        alias: "crp",
+        description: "The number of seasons with the same plant genotypes.",
+        type: "number",
+    },
+    spores: {
         alias: "sp",
         description: "The number spores at the start of the simulation.",
-        type: "number"
+        type: "number",
     },
-    "sporogenic_exponent":{
+    sporogenic_exponent: {
         alias: "se",
-        description: "The exponent determining the number of spores produced by the fungi.",
-        type: "number"
+        description:
+            "The exponent determining the number of spores produced by the fungi.",
+        type: "number",
     },
-    "branch_chance":{
+    branch_chance: {
         alias: "bc",
         description: "Chance of tip branching (per tip per ts).",
-        type: "number"
+        type: "number",
     },
-    "max_node_count":{
+    max_node_count: {
         alias: "mnc",
         description: "Maximum numbe rof overlapping hypha nodes.",
-        type: "number"
+        type: "number",
     },
-    "fungus_uptake":{
+    fungus_uptake: {
         alias: "ft",
-        description: "Amount of environmental resources aquired in 1 timestep by the hyphal nodes.",
-        type: "number"
+        description:
+            "Amount of environmental resources aquired in 1 timestep by the hyphal nodes.",
+        type: "number",
     },
-    "fungal_upkeep":{
+    fungal_upkeep: {
         alias: "fk",
-        description: "Amount of internal resources consumed in 1 timestep by one hyphal node",
-        type: "number"
+        description:
+            "Amount of internal resources consumed in 1 timestep by one hyphal node",
+        type: "number",
     },
-    "phi":{
+    phi: {
         alias: "ph",
-        description: "The multiplier for the uptake from plants of parasitic nodes.",
-        type: "number"
+        description:
+            "The multiplier for the uptake from plants of parasitic nodes.",
+        type: "number",
     },
-    "virulence_gene_penalty":{
+    virulence_gene_penalty: {
         alias: "vgp",
         description: "The added metabolic cost per virulence gene per node.",
-        type: "number"
+        type: "number",
     },
-    "mobile_ratio":{
+    mobile_ratio: {
         alias: "mr",
-        description: "The ratio of parasites with accessory chromosome at the start.",
-        type: "number"
+        description:
+            "The ratio of parasites with accessory chromosome at the start.",
+        type: "number",
     },
-    "parasite_ratio":{
+    parasite_ratio: {
         alias: "pr",
         description: "The ratio of fungi with a virulence gene at the start.",
-        type: "number"
+        type: "number",
     },
-    "hgt_rate":{
+    hgt_rate: {
         alias: "hgt",
-        description: "The chance of horizontal chromosome transfer at the end of the season.",
-        type: "number"
+        description:
+            "The chance of horizontal chromosome transfer at the end of the season.",
+        type: "number",
     },
-    "hgt_mode":{
+    hgt_mode: {
         alias: "hm",
         description: "The mode of horizontal chromosome transfer.",
         choices: ["cut", "copy"],
-        type: "string"
+        type: "string",
     },
-    "gene_loss_rate":{
+    gene_loss_rate: {
         alias: "lr",
         description: "The chance of losing a gene during sporulation.",
-        type: "number"
+        type: "number",
     },
-    "gene_gain_rate":{
+    gene_gain_rate: {
         alias: "gr",
         description: "The chance of gaining a gene during sporulation.",
-        type: "number"
+        type: "number",
     },
-    "chromosome_loss_rate":{
+    gene_transition_rate: {
+        alias: "gtr",
+        description:
+            "The chance of a pathogenicity gene turning into another gene.",
+        type: "number",
+    },
+    neutralization_rate: {
+        alias: "ner",
+        description:
+            "The chance of a gene turning into a pseudo-gene during transition.",
+        type: "number",
+    },
+    chromosome_loss_rate: {
         alias: "clr",
-        description: "The chance of losing a chromosome during sporulation.",
-        type: "number"
+        description:
+            "The chance of losing an accessory chromosome during sporulation.",
+        type: "number",
     },
-    "relocation_rate":{
+    relocation_rate: {
         alias: "rlr",
-        description: "The chance of a gene moving between chromosome during sporulation.",
-        type: "number"
+        description:
+            "The chance of a gene moving between chromosome during sporulation.",
+        type: "number",
     },
-    "plant_scale":{
+    plant_scale: {
         alias: "ps",
         description: "The size of one cell on the plant grid.",
-        type: "number"
+        type: "number",
     },
-    "plant_production":{
+    plant_production: {
         alis: "pp",
         description: "The production rate of the plants.",
-        type: "number"
+        type: "number",
     },
-    "plant_upkeep":{
+    plant_upkeep: {
         alias: "pk",
         description: "The resource consuption rate of the plants.",
-        type: "number"
-    },
-    "plant_genes":{
-        alias: "pg",
-        description: "The resistance genes available for the plants. If you want the plants to be susceptible to all pathogens type \"none\".",
-        type: "string"
+        type: "number",
     }
-
-
-}
+};
