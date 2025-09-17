@@ -5,15 +5,17 @@ import { sample, shuffle, Vector, fileIDGenerator } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
 
-/*import { makeIndex, log, writeGrids } from "./log.js";
+/* import { makeIndex, log, writeGrids } from "./log.js";
 import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js";
-import { hideBin } from "yargs/helpers";
- */
+import { hideBin } from "yargs/helpers"; */
+
 // Configuration constant for the cacatoo simulation
 
 export let sim;
+
+let fileName = "";
 
 // Declaration of the simulation
 const fusarium = async (config) => {
@@ -200,6 +202,7 @@ const fusarium = async (config) => {
             let new_fungi = [];
             let new_tips = [];
 
+            
             for (let x = 0; x < sim.field.nc; x++) {
                 for (let y = 0; y < sim.field.nr; y++) {
                     sim.field.grid[x][y].colour = 0;
@@ -230,6 +233,8 @@ const fusarium = async (config) => {
                     fungus.hypha.nodeCount ** sim.config.sporogenic_exponent
                 );
 
+                
+
                 for (let i = 0; i < nSpores; i++) {
                     let sporePos;
 
@@ -251,6 +256,7 @@ const fusarium = async (config) => {
 
                     let newFungus = fungus.getSpore(sporePos, nSpores);
 
+                    
                     if (!newFungus) continue;
                     new_fungi.push(newFungus);
 
@@ -289,6 +295,18 @@ const fusarium = async (config) => {
                     }
                 }
 
+                if (
+                    sim.config.resources_display ||
+                    sim.config.expected_spores_display
+                )
+                    for (let node of fungus.hypha.preOrderTraversal()) {
+                        let pos = Vector.floored(node.pos);
+
+                        sim.field.grid[pos.x][pos.y].resources = 0;
+
+                        sim.field.grid[pos.x][pos.y].eSpores = 0;
+                    }
+
                 new_tips = [...temp];
             } else {
                 new_fungi.push(fungus);
@@ -303,7 +321,11 @@ const fusarium = async (config) => {
         let newPlants = [];
 
         if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
-            if (sim.time % sim.config.crop_rotation_period == 0) {
+            if (
+                sim.time %
+                    (sim.config.crop_rotation_period * sim.config.season_len) ==
+                0
+            ) {
                 toggle_plant_genes = !toggle_plant_genes;
             }
 
@@ -352,7 +374,7 @@ const fusarium = async (config) => {
     if (typeof process == "object") {
         const fileID = fileIDGenerator();
 
-        const fileName = await makeIndex(sim, fileID);
+        fileName = await makeIndex(sim, fileID);
 
         sim.start();
     } else {

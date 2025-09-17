@@ -87,8 +87,12 @@ export function log(sim, plants, fungi, fileID) {
 
         let genomeA = "";
         if (f.genome.karyotype.length > 1) {
-            for (let g of f.genome.karyotype[1]) {
-                genomeA += g.name;
+            if (f.genome.karyotype[1].length == 0) {
+                genomeA += "EMPTY";
+            } else {
+                for (let g of f.genome.karyotype[1]) {
+                    genomeA += g.name;
+                }
             }
         }
 

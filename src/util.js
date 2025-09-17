@@ -9,11 +9,11 @@ export function* idGenerator() {
 
 export function fileIDGenerator() {
     let id = "";
-    let num = Date.now().toString().slice(0, 6);
+    let num = Date.now().toString().slice(-6);
 
     for (let i = 0; i < 6; i += 2) {
         id +=
-            String.fromCharCode(65 + sim.rng.genrand_int(0, 25)) +
+            String.fromCharCode(65 + Math.floor(Math.random()* 26)) +
             num[i] +
             num[i + 1];
     }
