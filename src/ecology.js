@@ -88,10 +88,14 @@ const nature = (sim) => {
 };
 
 export const random = (sim) => {
-    sim.field.grid[x][y].plant = null;
-    sim.field.grid[x][y].plant_node = null;
-    sim.field.grid[x][y].health = 0;
-    sim.field.grid[x][y].food = 0;
+    for (let x = 0; x < sim.field.nc; x++) {
+        for (let y = 0; y < sim.field.nr; y++) {
+            sim.field.grid[x][y].plant = null;
+            sim.field.grid[x][y].plant_node = null;
+            sim.field.grid[x][y].health = 0;
+            sim.field.grid[x][y].food = 0;
+        }
+    }
 
     let newGeneration = [];
 

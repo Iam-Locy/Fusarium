@@ -347,8 +347,6 @@ const fusarium = async (config) => {
                 }
             }
 
-            console.log(eco_mode)
-
             newPlants = ecology[eco_mode](sim);
             allPlants = newPlants
         } else {

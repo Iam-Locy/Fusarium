@@ -1,6 +1,3 @@
-import { choices } from "yargs";
-import ecology from "./ecology";
-
 export default {
     ncol: {
         alias: "nc",
