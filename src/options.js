@@ -1,3 +1,6 @@
+import { choices } from "yargs";
+import ecology from "./ecology";
+
 export default {
     ncol: {
         alias: "nc",
@@ -156,5 +159,11 @@ export default {
         alias: "pk",
         description: "The resource consuption rate of the plants.",
         type: "number",
+    },
+    ecology: {
+        alias: "eco",
+        description: "This is the modeled ecology.",
+        choices: ["agriculture", "nature", "random", "agriculture-nature", "nature-agriculture"],
+        type: "string"
     }
 };

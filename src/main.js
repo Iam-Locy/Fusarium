@@ -4,12 +4,13 @@ import Plant from "./plant.js";
 import { sample, shuffle, Vector, fileIDGenerator } from "./util.js";
 import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
+import ecology from "./ecology.js";
 
-/* import { makeIndex, log, writeGrids } from "./log.js";
+import { makeIndex, log, writeGrids } from "./log.js";
 import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
 import yargs from "yargs";
 import yargs_options from "./options.js";
-import { hideBin } from "yargs/helpers"; */
+import { hideBin } from "yargs/helpers";
 
 // Configuration constant for the cacatoo simulation
 
@@ -26,6 +27,10 @@ const fusarium = async (config) => {
     config.maxtime = config.season_len * config.max_season + 1;
     sim = new Simulation(config);
     sim.setupRandom();
+
+    sim.counters = {
+        hgt_count: 0,
+    };
 
     sim.makeGridmodel("field");
 
@@ -105,14 +110,12 @@ const fusarium = async (config) => {
     let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
     let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
-    let toggle_plant_genes = false;
-
     for (let x = 0; x < plantNcol; x++) {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
             for (let i = 1; i <= 3; i++) {
-                let gene = `r${i + toggle_plant_genes * 3}`;
+                let gene = `r${i}`;
 
                 chr.push(gene);
             }
@@ -202,7 +205,8 @@ const fusarium = async (config) => {
             let new_fungi = [];
             let new_tips = [];
 
-            
+            sim.counters.hgt_count = 0;
+
             for (let x = 0; x < sim.field.nc; x++) {
                 for (let y = 0; y < sim.field.nr; y++) {
                     sim.field.grid[x][y].colour = 0;
@@ -210,30 +214,42 @@ const fusarium = async (config) => {
                     sim.field.grid[x][y].node_count = 0;
                     sim.field.grid[x][y].resources = 0;
                     sim.field.grid[x][y].eSpores = 0;
-                    sim.field.grid[x][y].plant = null;
-                    sim.field.grid[x][y].plant_node = null;
-                    sim.field.grid[x][y].health = 0;
-                    sim.field.grid[x][y].food = 0;
                 }
             }
 
             for (let fungus of fungi) {
                 fungus.getContacts();
-                for (let network of fungus.connectedTo) {
-                    if (sim.rng.random() < sim.config.hgt_rate) {
-                        [fungus.genome, network.genome] =
-                            Genome.horizontalTransfer(
-                                fungus.genome,
-                                network.genome
-                            );
+
+                let potential_hgt_partners = [];
+
+                for (let neighbour of fungus.connectedTo) {
+                    if (fungus.genome.karyotype.length > 1) {
+                        if (neighbour.genome.karyotype.length == 1) {
+                            potential_hgt_partners.push(neighbour);
+                        }
+                    } else {
+                        if (neighbour.genome.karyotype.length > 1) {
+                            potential_hgt_partners.push(neighbour);
+                        }
                     }
+                }
+
+                if (
+                    sim.rng.random() < sim.config.hgt_rate &&
+                    potential_hgt_partners.length > 0
+                ) {
+                    let neighbour = sample(potential_hgt_partners);
+
+                    [fungus.genome, neighbour.genome] =
+                        Genome.horizontalTransfer(
+                            fungus.genome,
+                            neighbour.genome
+                        );
                 }
 
                 let nSpores = Math.floor(
                     fungus.hypha.nodeCount ** sim.config.sporogenic_exponent
                 );
-
-                
 
                 for (let i = 0; i < nSpores; i++) {
                     let sporePos;
@@ -256,7 +272,6 @@ const fusarium = async (config) => {
 
                     let newFungus = fungus.getSpore(sporePos, nSpores);
 
-                    
                     if (!newFungus) continue;
                     new_fungi.push(newFungus);
 
@@ -321,36 +336,21 @@ const fusarium = async (config) => {
         let newPlants = [];
 
         if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
-            if (
-                sim.time %
-                    (sim.config.crop_rotation_period * sim.config.season_len) ==
-                0
-            ) {
-                toggle_plant_genes = !toggle_plant_genes;
-            }
 
-            for (let x = 0; x < sim.plants.nc; x++) {
-                for (let y = 0; y < sim.plants.nr; y++) {
-                    let chr = [];
+            let eco_mode = sim.config.ecology;
 
-                    for (let i = 1; i <= 3; i++) {
-                        let gene = `r${i + toggle_plant_genes * 3}`;
-
-                        chr.push(gene);
-                    }
-
-                    let plant = new Plant(
-                        { x, y },
-                        sim.rng.genrand_int(1000, 4000),
-                        chr.map((g) => new Gene(g, Gene.genes[g])),
-                        sim.config.plant_production,
-                        sim.config.plant_upkeep
-                    );
-
-                    newPlants.push(plant);
+            if (eco_mode.includes("-")) {
+                if (sim.time < sim.config.maxtime / 2) {
+                    eco_mode = eco_mode.split("-")[0];
+                } else {
+                    eco_mode = eco_mode.split("-")[1];
                 }
             }
-            allPlants = newPlants;
+
+            console.log(eco_mode)
+
+            newPlants = ecology[eco_mode](sim);
+            allPlants = newPlants
         } else {
             for (let plant of plants) {
                 if (
