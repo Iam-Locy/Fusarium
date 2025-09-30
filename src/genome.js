@@ -121,6 +121,8 @@ export class Genome {
             newGenome1.karyotype.length > 1 &&
             newGenome2.karyotype.length == 1
         ) {
+            sim.counters.hgt_count += 1
+           
             newGenome2.karyotype.push([...newGenome1.karyotype[1]]);
 
             if (sim.config.hgt_mode == "cut") {
@@ -130,6 +132,8 @@ export class Genome {
             newGenome2.karyotype.length > 1 &&
             newGenome1.karyotype.length == 1
         ) {
+            sim.counters.hgt_count += 1
+           
             newGenome1.karyotype.push([...newGenome2.karyotype[1]]);
 
             if (sim.config.hgt_mode == "cut") {

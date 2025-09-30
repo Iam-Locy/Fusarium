@@ -60,6 +60,7 @@ export default class Plant {
                 (this.resources.production / this.resources.upkeep)
         );
 
+        
         this.drawPlant();
         return this.resources.amount;
     }
@@ -136,6 +137,7 @@ export default class Plant {
 
     drawPlant() {
         for (let node of this.rootSystem.preOrderTraversal()) {
+
             drawSpot(
                 sim.field.grid,
                 ["health", "plant"],

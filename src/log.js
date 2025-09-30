@@ -111,6 +111,9 @@ export function log(sim, plants, fungi, fileID) {
     }
 
     sim.write_append(`${fungusOut}\n`, `${fileName}_fungi.txt`);
+
+    let hgtOut = `${sim.time}\t${sim.counters.hgt_count}`
+    sim.write_append(`${hgtOut}\n`, `${fileName}_events.txt`);
 }
 
 export function writeGrids(sim, fileID) {
