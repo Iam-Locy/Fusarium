@@ -108,8 +108,8 @@ export default class Fungus {
     }
 
     getContacts() {
-        for (let tip of this.tips) {
-            let pos = Vector.floored(tip.pos);
+        for (let cell of this.hypha.preOrderTraversal()) {
+            let pos = Vector.floored(cell.pos);
 
             for (let node of sim.field.grid[pos.x][pos.y].nodes) {
                 if (node.fungus.id != this.id) {
@@ -140,12 +140,16 @@ export default class Fungus {
             newGenome = Genome.cutNPaste(newGenome);
         }
 
-       
-
         newGenome = Genome.chromosomeLoss(newGenome);
 
-       
         if (!newGenome.hasGenes(Object.keys(Gene.house_keeping_genes))) {
+            return false;
+        }
+
+        if (
+            sim.field.grid[Vector.floored(pos).x][Vector.floored(pos).y]
+                .node_count > 0
+        ) {
             return false;
         }
 
