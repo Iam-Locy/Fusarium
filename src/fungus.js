@@ -130,7 +130,7 @@ export default class Fungus {
                 newGenome.karyotype[i] = Genome.geneGain(
                     newGenome.karyotype[i]
                 );
-                newGenome.karyotype[i] = Genome.geneTransition(
+                newGenome.karyotype[i] = Genome.geneConversion(
                     newGenome.karyotype[i]
                 );
             }
