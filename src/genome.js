@@ -70,7 +70,7 @@ export class Genome {
         return newChr;
     }
 
-    static geneTransition(chr) {
+    static geneConverison(chr) {
         let newChr = [];
 
         for (let gene of chr) {
@@ -79,7 +79,7 @@ export class Genome {
                 continue;
             }
 
-            if (sim.rng.random() >= sim.config.gene_transition_rate) {
+            if (sim.rng.random() >= sim.config.gene_conversion_rate) {
                 newChr.push(gene);
                 continue;
             }

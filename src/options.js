@@ -118,7 +118,7 @@ export default {
         description: "The chance of gaining a gene during sporulation.",
         type: "number",
     },
-    gene_transition_rate: {
+    gene_conversion_rate: {
         alias: "gtr",
         description:
             "The chance of a pathogenicity gene turning into another gene.",
@@ -127,7 +127,7 @@ export default {
     neutralization_rate: {
         alias: "ner",
         description:
-            "The chance of a gene turning into a pseudo-gene during transition.",
+            "The chance of a gene turning into a pseudo-gene during gene-conversion.",
         type: "number",
     },
     chromosome_loss_rate: {

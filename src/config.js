@@ -15,7 +15,7 @@ export default {
         },
     },
     season_len: 1000,               // Number of timesteps (ts) in one season
-    max_season: 6,                // Number of seasons
+    max_season: 150,                // Number of seasons
     tilling: false,                 // Mixing the grid between seasons
     crop_rotation_period: 150,
 
@@ -33,12 +33,12 @@ export default {
                                     // Parasitic nodes take up (1 + phi) * uptake amount of resources
     virulence_gene_penalty: 0.0005, // The amount of extra cost per virulence gene per node per ts
     mobile_ratio: 0.5,              // Ratio of fungi with mobile genomic compartment (on which the pathogenicity gene resides)
-    parasite_ratio: 1,            // Ratio og fungi with pathogenicity gene
+    parasite_ratio: 0.5,            // Ratio og fungi with pathogenicity gene
     hgt_rate: 0.75,                 // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
     hgt_mode: "copy",               // Mode of hgt, it can be "copy" (copy-paste) or "cut" (cut&paste)
     gene_loss_rate: 0.01,           // Chance of losing a gene during sporulation
     gene_gain_rate: 0.005,          // Chance of gaining a gene during sporulation
-    gene_transition_rate: 0.1,
+    gene_conversion_rate: 0.1,
     neutralization_rate: 0.5,
     chromosome_loss_rate: 0.05,     // Chance of losing a chromosome during sporulation
     relocation_rate: 0.02,          // Chance of genes moving between compartments during sporulation
