@@ -70,7 +70,7 @@ export class Genome {
         return newChr;
     }
 
-    static geneConverison(chr) {
+    static geneConversion(chr) {
         let newChr = [];
 
         for (let gene of chr) {
