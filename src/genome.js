@@ -58,16 +58,25 @@ export class Genome {
         return newChr;
     }
 
-    static geneGain(chr) {
-        let newChr = [...chr];
+    static geneGain(genome) {
+        let newKaryotype = new Array(genome.karyotype.length);
 
-        if (sim.rng.random() < sim.config.gene_gain_rate) {
-            let gene = sample(["h","p"]) + sim.rng.genrand_int(1,6)
-            let index = sim.rng.genrand_int(0, newChr.length);
-            newChr.splice(index, 0, new Gene(gene, Gene.genes[gene]));
+        for (let i = 0; i < newKaryotype.length; i++) {
+            newKaryotype[i] = genome.karyotype[i];
         }
 
-        return newChr;
+        if (sim.rng.random() < sim.config.gene_gain_rate) {
+            let chr = sim.rng.genrand_int(0, newKaryotype.length - 1);
+            let gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
+            let index = sim.rng.genrand_int(0, newKaryotype[chr].length);
+            newKaryotype[chr].splice(
+                index,
+                0,
+                new Gene(gene, Gene.genes[gene])
+            );
+        }
+
+        return new Genome(newKaryotype);
     }
 
     static geneConversion(chr) {
@@ -121,8 +130,8 @@ export class Genome {
             newGenome1.karyotype.length > 1 &&
             newGenome2.karyotype.length == 1
         ) {
-            sim.counters.hgt_count += 1
-           
+            sim.counters.hgt_count += 1;
+
             newGenome2.karyotype.push([...newGenome1.karyotype[1]]);
 
             if (sim.config.hgt_mode == "cut") {
@@ -132,8 +141,8 @@ export class Genome {
             newGenome2.karyotype.length > 1 &&
             newGenome1.karyotype.length == 1
         ) {
-            sim.counters.hgt_count += 1
-           
+            sim.counters.hgt_count += 1;
+
             newGenome1.karyotype.push([...newGenome2.karyotype[1]]);
 
             if (sim.config.hgt_mode == "cut") {
@@ -145,7 +154,6 @@ export class Genome {
     }
 
     hasGenes(genes) {
-        
         if (!Array.isArray(genes)) {
             genes = [genes];
         }
@@ -160,7 +168,6 @@ export class Genome {
 
                 for (let g of chr) {
                     if (g.name == gene) found = true;
-                   
                 }
 
                 if (!found) temp.push(gene);

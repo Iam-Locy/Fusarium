@@ -122,12 +122,12 @@ export default class Fungus {
 
     getSpore(pos, nSpores) {
         let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
+
+        newGenome = Genome.geneGain(newGenome);
+
         for (let i = 0; i < newGenome.karyotype.length; i++) {
             {
                 newGenome.karyotype[i] = Genome.geneLoss(
-                    newGenome.karyotype[i]
-                );
-                newGenome.karyotype[i] = Genome.geneGain(
                     newGenome.karyotype[i]
                 );
                 newGenome.karyotype[i] = Genome.geneConversion(
