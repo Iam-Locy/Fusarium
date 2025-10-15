@@ -162,15 +162,29 @@ const fusarium = async (config) => {
             }
 
             if (typeof window === "object") {
-                if (sim.time % sim.config.season_len == 0) {
-                    sim.field.resetPlots();
+                if (sim.time && sim.time % sim.config.season_len == 0) {
+                    sim.field.graphs["Fungi resources"].reset_plot();
+                    sim.field.graphs["Plants resources"].reset_plot();
                 }
 
                 let fungiRes = [];
-
+                let pathogens = 0;
                 for (let fungus of allFungi) {
                     fungiRes.push(fungus.resources.amount);
+                    if (fungus.genome.hasGenes("p1")) pathogens++;
+                    else if (fungus.genome.hasGenes("p2")) pathogens++;
+                    else if (fungus.genome.hasGenes("p3")) pathogens++;
+                    else if (fungus.genome.hasGenes("p4")) pathogens++;
+                    else if (fungus.genome.hasGenes("p5")) pathogens++;
+                    if (fungus.genome.hasGenes("p6")) pathogens++;
                 }
+                /* console.log(
+                    `Time: ${sim.time}, Fungi: ${
+                        allFungi.length
+                    }, Pathogens: ${pathogens}, Plants: ${
+                        allPlants.length
+                    } (${Math.round((pathogens / allFungi.length) * 100)}%)`
+                ); */
 
                 sim.field.plotArray(
                     ["Amount"],
