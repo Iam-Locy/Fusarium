@@ -64,6 +64,7 @@ export default function setupDisplays(sim) {
             minval: 0,
             nticks: 10,
             maxval: 1,
+            decimals: 1
         });
     }
 }
