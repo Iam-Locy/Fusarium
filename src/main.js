@@ -6,26 +6,35 @@ import { Gene, Genome } from "./genome.js";
 import setupDisplays from "./displays.js";
 import ecology from "./ecology.js";
 
-import { makeIndex, log, writeGrids } from "./log.js";
-import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
-import yargs from "yargs";
-import yargs_options from "./options.js";
-import { hideBin } from "yargs/helpers";
-
-// Configuration constant for the cacatoo simulation
-
 export let sim;
 
 let fileName = "";
 
-// Declaration of the simulation
 const fusarium = async (config) => {
+    let makeIndex;
+    let log;
+    let writeGrids;
+
+    if (typeof process == "object") {
+        ({ makeIndex, log, writeGrids } = await import("./log.js"));
+    }
+
     let tips = []; //Array of updated hypha tips
     let fungi = []; //Array of living fungi
     let plants = []; //Array of living plants
 
     config.maxtime = config.season_len * config.max_season + 1;
-    sim = new Simulation(config);
+
+    if (typeof process === "object") {
+        const Simulation = (
+            await import("../node_modules/cacatoo/dist/cacatoo.js")
+        ).default;
+        sim = new Simulation(config);
+    } else {
+        sim = new Simulation(config);
+        window.sim = sim;
+    }
+
     sim.setupRandom();
 
     sim.counters = {
@@ -336,7 +345,6 @@ const fusarium = async (config) => {
         let newPlants = [];
 
         if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
-
             let eco_mode = sim.config.ecology;
 
             if (eco_mode.includes("-")) {
@@ -348,7 +356,7 @@ const fusarium = async (config) => {
             }
 
             newPlants = ecology[eco_mode](sim);
-            allPlants = newPlants
+            allPlants = newPlants;
         } else {
             for (let plant of plants) {
                 if (
@@ -382,6 +390,10 @@ const fusarium = async (config) => {
 
 // Run the simulation
 if (typeof process === "object") {
+    const yargs = (await import("yargs")).default;
+    const yargs_options = await import("./options.js");
+    const { hideBin } = await import("yargs/helpers");
+
     let cmd_params = yargs()
         .options(yargs_options)
         .parse(hideBin(process.argv));

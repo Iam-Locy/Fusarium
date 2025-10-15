@@ -1,11 +1,14 @@
 import { fileIDGenerator } from "./util.js";
 import fs from "fs";
+import { fileURLToPath } from 'url';
+
+const outFolder = `${fileURLToPath(import.meta.url).replace(/\\src\\.*$/, '')}\\output\\`
 
 export function makeIndex(sim, fileID) {
     let indexId;
     let outText = "";
 
-    for (let file of fs.readdirSync("./output/")) {
+    for (let file of fs.readdirSync(outFolder)) {
         if (file.includes("INDEX")) {
             indexId = file.replace("INDEX_", "").replace(".txt", "");
             break;
@@ -56,12 +59,13 @@ export function makeIndex(sim, fileID) {
         outText += `;${sim.config[param]}`;
     }
 
-    sim.write_append(outText, `./output/INDEX_${indexId}.txt`);
+    sim.write_append(outText, `${outFolder}/INDEX_${indexId}.txt`);
     return `${indexId}_${fileID}`;
 }
 
 export function log(sim, plants, fungi, fileID) {
-    let fileName = "./output/" + `${fileID}`;
+    
+    let fileName = outFolder + `${fileID}`;
     let plantOut = "";
 
     for (let p of plants) {
@@ -117,7 +121,7 @@ export function log(sim, plants, fungi, fileID) {
 }
 
 export function writeGrids(sim, fileID) {
-    let fileName = "./output/" + `${fileID}`;
+    let fileName = outFolder + `${fileID}`;
 
     let fungiOut = "X;Y;IDs";
     let plantsOut = "X;Y;ID";
