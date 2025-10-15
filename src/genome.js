@@ -153,12 +153,14 @@ export class Genome {
         return [newGenome1, newGenome2];
     }
 
-    hasGenes(genes) {
+    hasGenes(genes, mode = "and") {
         if (!Array.isArray(genes)) {
             genes = [genes];
         }
 
         if (genes.length == 0) return false;
+
+        let geneNum = genes.length;
 
         for (let chr of this.karyotype) {
             let temp = [];
@@ -176,10 +178,22 @@ export class Genome {
             genes = [...temp];
         }
 
-        if (genes.length == 0) {
-            return true;
-        } else {
-            return false;
+      
+
+        if (mode == "and") {
+            if (genes.length == 0) {
+                return true;
+            } else {
+                return false;
+            }
+
+        }else if(mode == "or"){
+
+            if (genes.length < geneNum) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }

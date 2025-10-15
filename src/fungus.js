@@ -38,6 +38,7 @@ export default class Fungus {
     }
 
     vegetative() {
+       
         for (let cell of this.feeding_cells) {
             let pos = cell.pos;
             let gridPoint = sim.field.grid[pos.x][pos.y];
