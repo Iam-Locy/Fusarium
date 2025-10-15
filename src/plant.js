@@ -11,6 +11,7 @@ export default class Plant {
         this.genome = new Genome([chr]);
         this.pos = pos;
         this.center = Plant.plantCenter(this.pos);
+        this.radius = Math.floor(sim.config.plant_scale/100 * 3);
         this.resources = {
             amount: resource,
             production: production,
@@ -29,7 +30,7 @@ export default class Plant {
                 sim.field.grid,
                 ["food", "plant_node"],
                 [1, this],
-                15,
+                this.radius * 5,
                 node.pos
             );
         }
@@ -60,7 +61,6 @@ export default class Plant {
                 (this.resources.production / this.resources.upkeep)
         );
 
-        
         this.drawPlant();
         return this.resources.amount;
     }
@@ -97,11 +97,17 @@ export default class Plant {
             let layer_1_center = new Vector(
                 root.root.pos.x +
                     Math.round(
-                        sim.rng.genrand_int(10, 15) * Math.cos(layer_1_dir)
+                        sim.rng.genrand_int(
+                            2 * this.radius,
+                            5 * this.radius
+                        ) * Math.cos(layer_1_dir)
                     ),
                 root.root.pos.y +
                     Math.round(
-                        sim.rng.genrand_int(10, 15) * Math.sin(layer_1_dir)
+                        sim.rng.genrand_int(
+                            2 * this.radius,
+                            5 * this.radius
+                        ) * Math.sin(layer_1_dir)
                     )
             );
 
@@ -117,11 +123,17 @@ export default class Plant {
                 let layer_2_center = new Vector(
                     layer_1_node.pos.x +
                         Math.round(
-                            sim.rng.genrand_int(10, 15) * Math.cos(layer_2_dir)
+                            sim.rng.genrand_int(
+                                2 * this.radius,
+                                5 * this.radius
+                            ) * Math.cos(layer_2_dir)
                         ),
                     layer_1_node.pos.y +
                         Math.round(
-                            sim.rng.genrand_int(10, 15) * Math.sin(layer_2_dir)
+                            sim.rng.genrand_int(
+                                2 * this.radius,
+                                5 * this.radius
+                            ) * Math.sin(layer_2_dir)
                         )
                 );
 
@@ -137,12 +149,11 @@ export default class Plant {
 
     drawPlant() {
         for (let node of this.rootSystem.preOrderTraversal()) {
-
             drawSpot(
                 sim.field.grid,
                 ["health", "plant"],
                 [this.health, this.health > 0 ? this : null],
-                3,
+                this.radius,
                 node.pos
             );
 
