@@ -119,7 +119,7 @@ export default {
         type: "number",
     },
     gene_conversion_rate: {
-        alias: "gtr",
+        alias: "gcr",
         description:
             "The chance of a pathogenicity gene turning into another gene.",
         type: "number",
