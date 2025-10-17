@@ -46,11 +46,13 @@ export class Genome {
         return new Genome(newKaryotype);
     }
 
-    static geneLoss(chr) {
+    static geneLoss(chr, mode = "fungi") {
         let newChr = [];
 
         for (let gene of chr) {
-            if (sim.rng.random() >= sim.config.gene_loss_rate) {
+            if (mode == "fungi" && sim.rng.random() >= sim.config.fungi_gene_loss_rate) {
+                newChr.push(gene);
+            }else if(mode == "plants" && sim.rng.random() >= sim.config.plant_gene_loss_rate){
                 newChr.push(gene);
             }
         }
@@ -65,17 +67,25 @@ export class Genome {
             newKaryotype[i] = genome.karyotype[i];
         }
 
-        if (sim.rng.random() < sim.config.gene_gain_rate) {
-            let chr = sim.rng.genrand_int(0, newKaryotype.length - 1);
-            let gene;
+        let chr = sim.rng.genrand_int(0, newKaryotype.length - 1);
+        let gene;
+        let index = sim.rng.genrand_int(0, newKaryotype[chr].length);
 
-            if(mode == "fungi"){
-                gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
-            }else if(mode == "plants"){
-                gene = sample(["r"]) + sim.rng.genrand_int(1, 6);
-            }
-
-            let index = sim.rng.genrand_int(0, newKaryotype[chr].length);
+        if (
+            mode == "fungi" &&
+            sim.rng.random() < sim.config.fungi_gene_gain_rate
+        ) {
+            gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
+            newKaryotype[chr].splice(
+                index,
+                0,
+                new Gene(gene, Gene.genes[gene])
+            );
+        } else if (
+            mode == "plants" &&
+            sim.rng.random() < sim.config.plant_gene_gain_rate
+        ) {
+            gene = sample(["r"]) + sim.rng.genrand_int(1, 6);
             newKaryotype[chr].splice(
                 index,
                 0,
@@ -185,17 +195,13 @@ export class Genome {
             genes = [...temp];
         }
 
-      
-
         if (mode == "and") {
             if (genes.length == 0) {
                 return true;
             } else {
                 return false;
             }
-
-        }else if(mode == "or"){
-
+        } else if (mode == "or") {
             if (genes.length < geneNum) {
                 return true;
             } else {

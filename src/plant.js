@@ -71,7 +71,7 @@ export default class Plant {
 
         newGenome = Genome.geneGain(newGenome, "plants");
 
-        newGenome.karyotype[0] = Genome.geneLoss(newGenome.karyotype[0]);
+        newGenome.karyotype[0] = Genome.geneLoss(newGenome.karyotype[0], "plants");
 
         return new Plant(
             pos,

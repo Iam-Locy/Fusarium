@@ -34,12 +34,12 @@ export default {
     virulence_gene_penalty: 0.0005, // The amount of extra cost per virulence gene per node per ts
     mobile_ratio: 0.5,              // Ratio of fungi with mobile genomic compartment (on which the pathogenicity gene resides)
     parasite_ratio: 0.5,            // Ratio og fungi with pathogenicity gene
-    hgt_rate: 0.75,                 // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
+    hgt_rate: 0.25,                 // Chance of horizontal chromosome transfer (hgt) between connected fungal networks
     hgt_mode: "copy",               // Mode of hgt, it can be "copy" (copy-paste) or "cut" (cut&paste)
-    gene_loss_rate: 0.01,           // Chance of losing a gene during sporulation
-    gene_gain_rate: 0.005,          // Chance of gaining a gene during sporulation
+    fungi_gene_loss_rate: 0.01,           // Chance of losing a gene during sporulation
+    fungi_gene_gain_rate: 0.005,          // Chance of gaining a gene during sporulation
     gene_conversion_rate: 0.1,
-    neutralization_rate: 0.5,
+    neutralization_rate: 0.05,
     chromosome_loss_rate: 0.05,     // Chance of losing a chromosome during sporulation
     relocation_rate: 0.02,          // Chance of genes moving between compartments during sporulation
 
@@ -47,7 +47,9 @@ export default {
     plant_scale: 100,               // The size of one cell on the plant grid
     plant_production: 0.02,         // Resource production rate of the plants
     plant_upkeep: 0.000005,         // Resource usage rate of the plants
-    ecology: "agriculture",
+    plant_gene_gain_rate: 0.005,
+    plant_gene_loss_rate: 0.01,
+    ecology: "nature",
 
     //Display settings
     display_refresh: 100,           // Refresh rate of the resource heavy displays: accumulated resources and expected spores
