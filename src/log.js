@@ -3,9 +3,9 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 
 const outFolder = `${fileURLToPath(import.meta.url).replace(
-    /\\src\\.*$/,
+    /src.*$/,
     ""
-)}\\output\\`;
+)}output/`;
 
 export function makeIndex(sim, fileID) {
     let indexId;
@@ -75,9 +75,9 @@ export function log(sim, plants, fungi, fileID) {
         for (let g of p.genome.karyotype[0]) {
             genome += g.name;
         }
-        plantOut += `I:${p.id};P:${p.parent};G:${genome};R:${p.resources.amount.toFixed(
-            2
-        )}\t`;
+        plantOut += `I:${p.id};P:${
+            p.parent
+        };G:${genome};R:${p.resources.amount.toFixed(2)}\t`;
     }
 
     sim.write_append(`${plantOut}\n`, `${fileName}_plants.txt`);
