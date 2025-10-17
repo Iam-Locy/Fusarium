@@ -1,17 +1,18 @@
 import { Genome } from "./genome.js";
 import { sim } from "./main.js";
 import { Node, Tree } from "./tree.js";
-import { clamp, drawLine, drawSpot, idGenerator, Vector } from "./util.js";
+import { clamp, drawLine, drawSpot, idGenerator, Vector, deepCopyArray } from "./util.js";
 
 let genID = idGenerator();
 
 export default class Plant {
-    constructor(pos, resource, chr, production, upkeep) {
+    constructor(pos, resource, chr, production, upkeep, parent = "none") {
         this.id = genID.next().value;
+        this.parent = parent;
         this.genome = new Genome([chr]);
         this.pos = pos;
         this.center = Plant.plantCenter(this.pos);
-        this.radius = Math.floor(sim.config.plant_scale/100 * 3);
+        this.radius = Math.floor((sim.config.plant_scale / 100) * 3);
         this.resources = {
             amount: resource,
             production: production,
@@ -65,6 +66,23 @@ export default class Plant {
         return this.resources.amount;
     }
 
+    getSeed(pos) {
+        let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
+
+        newGenome = Genome.geneGain(newGenome, "plants");
+
+        newGenome.karyotype[0] = Genome.geneLoss(newGenome.karyotype[0]);
+
+        return new Plant(
+            pos,
+            sim.rng.genrand_int(1000, 4000),
+            newGenome.karyotype[0],
+            sim.config.plant_production,
+            sim.config.plant_upkeep,
+            this.id
+        );
+    }
+
     die() {
         this.resources.amount = 0;
         this.health = 0;
@@ -97,17 +115,13 @@ export default class Plant {
             let layer_1_center = new Vector(
                 root.root.pos.x +
                     Math.round(
-                        sim.rng.genrand_int(
-                            2 * this.radius,
-                            5 * this.radius
-                        ) * Math.cos(layer_1_dir)
+                        sim.rng.genrand_int(2 * this.radius, 5 * this.radius) *
+                            Math.cos(layer_1_dir)
                     ),
                 root.root.pos.y +
                     Math.round(
-                        sim.rng.genrand_int(
-                            2 * this.radius,
-                            5 * this.radius
-                        ) * Math.sin(layer_1_dir)
+                        sim.rng.genrand_int(2 * this.radius, 5 * this.radius) *
+                            Math.sin(layer_1_dir)
                     )
             );
 

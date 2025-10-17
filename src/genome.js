@@ -58,7 +58,7 @@ export class Genome {
         return newChr;
     }
 
-    static geneGain(genome) {
+    static geneGain(genome, mode = "fungi") {
         let newKaryotype = new Array(genome.karyotype.length);
 
         for (let i = 0; i < newKaryotype.length; i++) {
@@ -67,7 +67,14 @@ export class Genome {
 
         if (sim.rng.random() < sim.config.gene_gain_rate) {
             let chr = sim.rng.genrand_int(0, newKaryotype.length - 1);
-            let gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
+            let gene;
+
+            if(mode == "fungi"){
+                gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
+            }else if(mode == "plants"){
+                gene = sample(["r"]) + sim.rng.genrand_int(1, 6);
+            }
+
             let index = sim.rng.genrand_int(0, newKaryotype[chr].length);
             newKaryotype[chr].splice(
                 index,

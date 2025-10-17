@@ -71,15 +71,7 @@ const nature = (sim) => {
             let neigh = sample(neighs);
 
             if (neigh) {
-                newGeneration.push(
-                    new Plant(
-                        pos,
-                        1000,
-                        neigh.genome.karyotype[0],
-                        sim.config.plant_production,
-                        sim.config.plant_upkeep
-                    )
-                );
+                newGeneration.push(neigh.getSeed(pos));
             }
         }
     }
