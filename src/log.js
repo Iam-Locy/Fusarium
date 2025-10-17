@@ -1,8 +1,11 @@
 import { fileIDGenerator } from "./util.js";
 import fs from "fs";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
-const outFolder = `${fileURLToPath(import.meta.url).replace(/\\src\\.*$/, '')}\\output\\`
+const outFolder = `${fileURLToPath(import.meta.url).replace(
+    /\\src\\.*$/,
+    ""
+)}\\output\\`;
 
 export function makeIndex(sim, fileID) {
     let indexId;
@@ -64,7 +67,6 @@ export function makeIndex(sim, fileID) {
 }
 
 export function log(sim, plants, fungi, fileID) {
-    
     let fileName = outFolder + `${fileID}`;
     let plantOut = "";
 
@@ -73,7 +75,7 @@ export function log(sim, plants, fungi, fileID) {
         for (let g of p.genome.karyotype[0]) {
             genome += g.name;
         }
-        plantOut += `P:${p.id};G:${genome};R:${p.resources.amount.toFixed(
+        plantOut += `I:${p.id};P:${p.parent};G:${genome};R:${p.resources.amount.toFixed(
             2
         )}\t`;
     }
@@ -107,8 +109,8 @@ export function log(sim, plants, fungi, fileID) {
 
         hosts = hosts.substring(0, hosts.length - 1);
 
-        fungusOut += `F:${
-            f.id
+        fungusOut += `I:${f.id};P:${
+            f.parent
         };C:${genomeC};A:${genomeA};R:${f.resources.amount.toFixed(2)};S:${
             f.hypha.nodeCount
         };H:${hosts}\t`;
@@ -116,7 +118,7 @@ export function log(sim, plants, fungi, fileID) {
 
     sim.write_append(`${fungusOut}\n`, `${fileName}_fungi.txt`);
 
-    let hgtOut = `${sim.time}\t${sim.counters.hgt_count}`
+    let hgtOut = `${sim.time}\t${sim.counters.hgt_count}`;
     sim.write_append(`${hgtOut}\n`, `${fileName}_events.txt`);
 }
 

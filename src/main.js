@@ -123,7 +123,7 @@ const fusarium = async (config) => {
         for (let y = 0; y < plantNrow; y++) {
             let chr = [];
 
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 2; i++) {
                 let gene = `r${i}`;
 
                 chr.push(gene);
@@ -169,15 +169,12 @@ const fusarium = async (config) => {
 
                 let fungiRes = [];
                 let pathogens = 0;
+                
                 for (let fungus of allFungi) {
                     fungiRes.push(fungus.resources.amount);
-                    if (fungus.genome.hasGenes("p1")) pathogens++;
-                    else if (fungus.genome.hasGenes("p2")) pathogens++;
-                    else if (fungus.genome.hasGenes("p3")) pathogens++;
-                    else if (fungus.genome.hasGenes("p4")) pathogens++;
-                    else if (fungus.genome.hasGenes("p5")) pathogens++;
-                    if (fungus.genome.hasGenes("p6")) pathogens++;
+                    if (fungus.genome.hasGenes(Object.keys(Gene.pathogenicity_genes), "or")) pathogens++;
                 }
+
                 /* console.log(
                     `Time: ${sim.time}, Fungi: ${
                         allFungi.length

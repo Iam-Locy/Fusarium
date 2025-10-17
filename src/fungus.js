@@ -7,7 +7,7 @@ import { Genome, Gene } from "./genome.js";
 const genID = idGenerator();
 
 export default class Fungus {
-    constructor(pos, colour, genome, resource, uptake, upkeep) {
+    constructor(pos, colour, genome, resource, uptake, upkeep, parent = "none") {
         this.id = genID.next().value;
         this.colour = colour;
         this.genome = genome;
@@ -21,6 +21,7 @@ export default class Fungus {
         this.hypha = this.placeHypha(pos);
         this.hosts = new Set([]);
         this.connectedTo = new Set([]);
+        this.parent = parent
     }
 
     placeHypha(pos) {
@@ -160,7 +161,8 @@ export default class Fungus {
             newGenome,
             clamp(0, 200, this.resources.amount / nSpores),
             this.resources.uptake,
-            this.resources.upkeep
+            this.resources.upkeep,
+            this.id
         );
 
         return spore;
