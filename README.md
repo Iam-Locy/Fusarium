@@ -1,2 +1,2 @@
 # Fusarium
-Individual Based Model for HGT in Fusarium oxysporum
+Individual Based Model for horizontal chromosome transfer in Fusarium oxysporum
