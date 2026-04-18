@@ -189,6 +189,5 @@ export default class Plant {
 class plantNode extends Node {
     constructor(pos) {
         super(pos);
-        this.occupant = undefined;
     }
 }

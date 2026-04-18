@@ -11,6 +11,8 @@ export let sim;
 let fileName = "";
 
 const fusarium = async (config) => {
+
+    
     let makeIndex;
     let log;
     let writeGrids;
@@ -35,6 +37,7 @@ const fusarium = async (config) => {
         window.sim = sim;
     }
 
+    console.log("Seed:\t",sim.config.seed)
     sim.setupRandom();
 
     sim.counters = {

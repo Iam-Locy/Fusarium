@@ -7,7 +7,15 @@ import { Genome, Gene } from "./genome.js";
 const genID = idGenerator();
 
 export default class Fungus {
-    constructor(pos, colour, genome, resource, uptake, upkeep, parent = "none") {
+    constructor(
+        pos,
+        colour,
+        genome,
+        resource,
+        uptake,
+        upkeep,
+        parent = "none"
+    ) {
         this.id = genID.next().value;
         this.colour = colour;
         this.genome = genome;
@@ -21,7 +29,7 @@ export default class Fungus {
         this.hypha = this.placeHypha(pos);
         this.hosts = new Set([]);
         this.connectedTo = new Set([]);
-        this.parent = parent
+        this.parent = parent;
     }
 
     placeHypha(pos) {
@@ -39,7 +47,13 @@ export default class Fungus {
     }
 
     vegetative() {
-       
+
+        if(this.genome.hasGenes(Object.keys(Gene.pathogenicity_genes),"or")){
+            this.colour = 2
+        }else{
+            this.colour = 1
+        }
+        
         for (let cell of this.feeding_cells) {
             let pos = cell.pos;
             let gridPoint = sim.field.grid[pos.x][pos.y];
@@ -55,6 +69,7 @@ export default class Fungus {
 
             if (plant) {
                 if (this.hosts.has(plant)) {
+                 
                     this.resources.amount += clamp(
                         0,
                         plant.resources.amount,
@@ -66,7 +81,7 @@ export default class Fungus {
                         plant.resources.amount,
                         this.resources.uptake * sim.config.phi
                     );
-                }
+                } 
             }
         }
 
@@ -132,14 +147,23 @@ export default class Fungus {
                 newGenome.karyotype[i] = Genome.geneLoss(
                     newGenome.karyotype[i]
                 );
-                newGenome.karyotype[i] = Genome.geneConversion(
-                    newGenome.karyotype[i]
-                );
+
+                if (!sim.config.accessory_hypermutator) {
+                    newGenome.karyotype[i] = Genome.geneConversion(
+                        newGenome.karyotype[i]
+                    );
+                }
             }
         }
 
         if (newGenome.karyotype.length > 1) {
             newGenome = Genome.cutNPaste(newGenome);
+
+            if (sim.config.accessory_hypermutator) {
+                newGenome.karyotype[1] = Genome.geneConversion(
+                    newGenome.karyotype[1]
+                );
+            }
         }
 
         newGenome = Genome.chromosomeLoss(newGenome);

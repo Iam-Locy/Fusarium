@@ -13,6 +13,7 @@ export default function setupDisplays(sim) {
             minval: 0,
             nticks: 6,
             maxval: sim.config.max_node_count,
+            decimals: 1
         });
     }
 
