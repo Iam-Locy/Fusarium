@@ -1,46 +1,193 @@
-import { idGenerator } from "./util.js";
+import { Genome } from "./genome.js";
 import { sim } from "./main.js";
+import { Node, Tree } from "./tree.js";
+import { clamp, drawLine, drawSpot, idGenerator, Vector, deepCopyArray } from "./util.js";
 
-const genID = idGenerator();
+let genID = idGenerator();
 
 export default class Plant {
-    constructor(x, y, resource, genome, production, upkeep) {
+    constructor(pos, resource, chr, production, upkeep, parent = "none") {
         this.id = genID.next().value;
-        this.x = x;
-        this.y = y;
-        this.xRange = [
-            x * sim.config.plant_scale,
-            (x + 1) * sim.config.plant_scale - 1,
-        ];
-        this.yRange = [
-            y * sim.config.plant_scale,
-            (y + 1) * sim.config.plant_scale - 1,
-        ];
-        this.genome = genome;
-        this.resource = resource;
-        this.production = production;
-        this.upkeep = upkeep;
+        this.parent = parent;
+        this.genome = new Genome([chr]);
+        this.pos = pos;
+        this.center = Plant.plantCenter(this.pos);
+        this.radius = Math.floor((sim.config.plant_scale / 100) * 3);
+        this.resources = {
+            amount: resource,
+            production: production,
+            upkeep: upkeep,
+        };
+        this.health = clamp(
+            0,
+            1,
+            this.resources.amount /
+                (this.resources.production / this.resources.upkeep)
+        );
+
+        this.rootSystem = this.placePlant();
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(
+                sim.field.grid,
+                ["food", "plant_node"],
+                [1, this],
+                this.radius * 5,
+                node.pos
+            );
+        }
+
+        this.drawPlant();
+    }
+
+    static plantCenter(vec) {
+        let newVec = new Vector(
+            vec.x * sim.config.plant_scale +
+                Math.floor(sim.config.plant_scale / 2),
+            vec.y * sim.config.plant_scale +
+                Math.floor(sim.config.plant_scale / 2)
+        );
+
+        return newVec;
     }
 
     vegetative() {
-        this.resource +=
-            this.resource * this.production - this.resource ** 2 * this.upkeep;
+        this.resources.amount +=
+            this.resources.amount * this.resources.production -
+            this.resources.amount ** 2 * this.resources.upkeep;
 
-        if (
-            this.resource / (this.production / this.upkeep) < 0.1 ||
-            isNaN(this.resource)
-        ) {
-            this.die;
-        }
+        this.health = clamp(
+            0,
+            1,
+            this.resources.amount /
+                (this.resources.production / this.resources.upkeep)
+        );
 
-        return this.resource;
+        this.drawPlant();
+        return this.resources.amount;
+    }
+
+    getSeed(pos) {
+        let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
+
+        newGenome = Genome.geneGain(newGenome, "plants");
+
+        newGenome.karyotype[0] = Genome.geneLoss(newGenome.karyotype[0], "plants");
+
+        return new Plant(
+            pos,
+            sim.rng.genrand_int(1000, 4000),
+            newGenome.karyotype[0],
+            sim.config.plant_production,
+            sim.config.plant_upkeep,
+            this.id
+        );
     }
 
     die() {
-        this.resource = 0
-        sim.plants.grid[this.x][this.y].plant = null;
-        sim.field.grid[2 * this.x + 1][2 * this.y + 1].plant = null;
-        sim.field.grid[2 * this.x + 1][2 * this.y + 1].health = 0;
-        sim.field.grid[2 * this.x + 1][2 * this.y + 1].pColour = null;
+        this.resources.amount = 0;
+        this.health = 0;
+
+        this.drawPlant();
+
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(
+                sim.field.grid,
+                ["food", "plant_node"],
+                [0, null],
+                15,
+                node.pos
+            );
+        }
+        sim.plants.grid[this.pos.x][this.pos.y].plant = null;
+    }
+
+    placePlant() {
+        let root = new Tree(new plantNode(this.center));
+
+        for (let i = 0; i < 3; i++) {
+            let min_angle = (i * (2 * Math.PI)) / 3 + (35 * Math.PI) / 180;
+            let max_angle =
+                ((i + 1) * (2 * Math.PI)) / 3 - (35 * Math.PI) / 180;
+
+            let layer_1_dir =
+                min_angle + sim.rng.random() * (max_angle - min_angle);
+
+            let layer_1_center = new Vector(
+                root.root.pos.x +
+                    Math.round(
+                        sim.rng.genrand_int(2 * this.radius, 5 * this.radius) *
+                            Math.cos(layer_1_dir)
+                    ),
+                root.root.pos.y +
+                    Math.round(
+                        sim.rng.genrand_int(2 * this.radius, 5 * this.radius) *
+                            Math.sin(layer_1_dir)
+                    )
+            );
+
+            let layer_1_node = new plantNode(layer_1_center);
+            root.root.addChild(layer_1_node);
+
+            for (let j = 0; j < 2; j++) {
+                let modifier = j > 0 ? 1 : -1;
+                let layer_2_dir =
+                    layer_1_dir +
+                    modifier * ((sim.rng.genrand_int(30, 60) * Math.PI) / 180);
+
+                let layer_2_center = new Vector(
+                    layer_1_node.pos.x +
+                        Math.round(
+                            sim.rng.genrand_int(
+                                2 * this.radius,
+                                5 * this.radius
+                            ) * Math.cos(layer_2_dir)
+                        ),
+                    layer_1_node.pos.y +
+                        Math.round(
+                            sim.rng.genrand_int(
+                                2 * this.radius,
+                                5 * this.radius
+                            ) * Math.sin(layer_2_dir)
+                        )
+                );
+
+                let layer_2_node = new plantNode(layer_2_center);
+                layer_1_node.addChild(layer_2_node);
+            }
+        }
+
+        sim.plants.grid[this.pos.x][this.pos.y].plant = this;
+
+        return root;
+    }
+
+    drawPlant() {
+        for (let node of this.rootSystem.preOrderTraversal()) {
+            drawSpot(
+                sim.field.grid,
+                ["health", "plant"],
+                [this.health, this.health > 0 ? this : null],
+                this.radius,
+                node.pos
+            );
+
+            if (node.children.length > 0) {
+                for (let child of node.children) {
+                    drawLine(
+                        sim.field,
+                        ["health"],
+                        [this.health],
+                        node.pos,
+                        child.pos
+                    );
+                }
+            }
+        }
+    }
+}
+
+class plantNode extends Node {
+    constructor(pos) {
+        super(pos);
     }
 }

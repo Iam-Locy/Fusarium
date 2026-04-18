@@ -3,9 +3,11 @@ import { idGenerator } from "./util.js";
 const genID = idGenerator();
 
 export class Tree {
-    constructor() {
+    constructor(root = new Node()) {
         this.id = genID.next().value;
-        this.root = new Node();
+        this.root = root;
+        this.root.tree = this;
+        this.nodeCount = 1;
     }
 
     *preOrderTraversal(node = this.root) {
@@ -26,32 +28,46 @@ export class Tree {
 }
 
 export class Node {
-    constructor(parent = undefined) {
+    constructor(pos) {
         this.id = genID.next().value;
-        this.parent = parent;
+        this.tree = undefined;
+        this.parent = undefined;
         this.children = [];
-        if (parent) {
-            this.parent.addChild(this);
-        }
+        this.pos = pos;
     }
 
     addChild(node) {
         if (this.children.includes(node)) {
             return false;
         }
-        this.children.push(node);
 
         if (node.parent) {
             return false;
         }
+
+        this.children.push(node);
+        node.parent = this;
+        node.tree = this.tree;
+
+        this.tree.nodeCount += 1;
         return true;
     }
 
     removeChild(id) {
-        const filtered = this.children.filter((c) => c.id !== id);
+        const filtered = this.children.filter((c) => {
+            if (c.id !== id) {
+                return true;
+            } else {
+                c.parent = undefined;
+                c.tree = undefined;
+                return false;
+            }
+        });
 
         if (filtered.length !== this.children.length) {
             this.children = filtered;
+
+            this.tree.nodeCount -= 1;
             return true;
         }
 

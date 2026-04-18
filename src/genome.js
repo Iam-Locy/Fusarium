@@ -1,0 +1,267 @@
+import { sim } from "./main.js";
+import { deepCopyArray, filterObject, sample } from "./util.js";
+
+export class Genome {
+    constructor(karyotype) {
+        this.karyotype = [];
+
+        for (let chr of karyotype) {
+            if (!Array.isArray(chr)) {
+                console.error(`${chr} in not an Array`);
+            }
+
+            this.karyotype.push(chr);
+        }
+    }
+
+    static cutNPaste(genome) {
+        let newKaryotype = new Array(genome.karyotype.length);
+        for (let i = 0; i < newKaryotype.length; i++) {
+            newKaryotype[i] = [];
+        }
+
+        for (let i = 0; i < genome.karyotype.length; i++) {
+            for (let gene of genome.karyotype[i]) {
+                let moved = false;
+                for (let j = 0; j < newKaryotype.length; j++) {
+                    if (
+                        i != j &&
+                        sim.rng.random() < sim.config.relocation_rate
+                    ) {
+                        let index = sim.rng.genrand_int(
+                            0,
+                            newKaryotype[i].length
+                        );
+                        moved = true;
+                        newKaryotype[j].splice(index, 0, gene);
+                        break;
+                    }
+                }
+
+                if (!moved) {
+                    newKaryotype[i].push(gene);
+                }
+            }
+        }
+        return new Genome(newKaryotype);
+    }
+
+    static geneLoss(chr, mode = "fungi") {
+        let newChr = [];
+
+        for (let gene of chr) {
+            if (mode == "fungi" && sim.rng.random() >= sim.config.fungi_gene_loss_rate) {
+                newChr.push(gene);
+            }else if(mode == "plants" && sim.rng.random() >= sim.config.plant_gene_loss_rate){
+                newChr.push(gene);
+            }
+        }
+
+        return newChr;
+    }
+
+    static geneGain(genome, mode = "fungi") {
+        let newKaryotype = new Array(genome.karyotype.length);
+
+        for (let i = 0; i < newKaryotype.length; i++) {
+            newKaryotype[i] = genome.karyotype[i];
+        }
+
+        let chr = sim.rng.genrand_int(0, newKaryotype.length - 1);
+        let gene;
+        let index = sim.rng.genrand_int(0, newKaryotype[chr].length);
+
+        if (
+            mode == "fungi" &&
+            sim.rng.random() < sim.config.fungi_gene_gain_rate
+        ) {
+            gene = sample(["h", "p"]) + sim.rng.genrand_int(1, 6);
+            newKaryotype[chr].splice(
+                index,
+                0,
+                new Gene(gene, Gene.genes[gene])
+            );
+        } else if (
+            mode == "plants" &&
+            sim.rng.random() < sim.config.plant_gene_gain_rate
+        ) {
+            gene = sample(["r"]) + sim.rng.genrand_int(1, 6);
+            newKaryotype[chr].splice(
+                index,
+                0,
+                new Gene(gene, Gene.genes[gene])
+            );
+        }
+
+        return new Genome(newKaryotype);
+    }
+
+    static geneConversion(chr) {
+        let newChr = [];
+
+        for (let gene of chr) {
+            if (gene.type != "pathogenicity") {
+                newChr.push(gene);
+                continue;
+            }
+
+            if (sim.rng.random() >= sim.config.gene_conversion_rate) {
+                newChr.push(gene);
+                continue;
+            }
+
+            if (sim.rng.random() < sim.config.neutralization_rate) {
+                let name = "n" + gene.name.slice(1);
+
+                newChr.push(new Gene(name, Gene.genes[name]));
+                continue;
+            }
+
+            let new_gene = gene;
+
+            while (new_gene.name == gene.name) {
+                let g = sample(Object.keys(Gene.pathogenicity_genes));
+
+                new_gene = new Gene(g, Gene.genes[g]);
+            }
+
+            newChr.push(new_gene);
+        }
+
+        return newChr;
+    }
+
+    static chromosomeLoss(genome) {
+        if (sim.rng.random() < sim.config.chromosome_loss_rate) {
+            return new Genome([genome.karyotype[0]]);
+        }
+
+        return genome;
+    }
+
+    static horizontalTransfer(genome1, genome2) {
+        let newGenome1 = new Genome(deepCopyArray(genome1.karyotype));
+        let newGenome2 = new Genome(deepCopyArray(genome2.karyotype));
+
+        if (
+            newGenome1.karyotype.length > 1 &&
+            newGenome2.karyotype.length == 1
+        ) {
+            sim.counters.hgt_count += 1;
+
+            newGenome2.karyotype.push([...newGenome1.karyotype[1]]);
+
+            if (sim.config.hgt_mode == "cut") {
+                newGenome1.karyotype.splice(1, 1);
+            }
+        } else if (
+            newGenome2.karyotype.length > 1 &&
+            newGenome1.karyotype.length == 1
+        ) {
+            sim.counters.hgt_count += 1;
+
+            newGenome1.karyotype.push([...newGenome2.karyotype[1]]);
+
+            if (sim.config.hgt_mode == "cut") {
+                newGenome2.karyotype.splice(1, 1);
+            }
+        }
+
+        return [newGenome1, newGenome2];
+    }
+
+    hasGenes(genes, mode = "and") {
+        if (!Array.isArray(genes)) {
+            genes = [genes];
+        }
+
+        if (genes.length == 0) return false;
+
+        let geneNum = genes.length;
+
+        for (let chr of this.karyotype) {
+            let temp = [];
+
+            for (let gene of genes) {
+                let found = false;
+
+                for (let g of chr) {
+                    if (g.name == gene) found = true;
+                }
+
+                if (!found) temp.push(gene);
+            }
+
+            genes = [...temp];
+        }
+
+        if (mode == "and") {
+            if (genes.length == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if (mode == "or") {
+            if (genes.length < geneNum) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+}
+
+export class Gene {
+    constructor(name, type) {
+        this.name = name;
+        this.type = type;
+
+        if (type === "resistance") {
+            this.target = "p" + name.slice(1);
+        }
+    }
+
+    static genes = {
+        h1: "house_keeping",
+        h2: "house_keeping",
+        h3: "house_keeping",
+        h4: "house_keeping",
+        h5: "house_keeping",
+        h6: "house_keeping",
+        p1: "pathogenicity",
+        p2: "pathogenicity",
+        p3: "pathogenicity",
+        p4: "pathogenicity",
+        p5: "pathogenicity",
+        p6: "pathogenicity",
+        r1: "resistance",
+        r2: "resistance",
+        r3: "resistance",
+        r4: "resistance",
+        r5: "resistance",
+        r6: "resistance",
+        n1: "neutral",
+        n2: "neutral",
+        n3: "neutral",
+        n4: "neutral",
+        n5: "neutral",
+        n6: "neutral",
+    };
+
+    static house_keeping_genes = filterObject(
+        Gene.genes,
+        (type) => type == "house_keeping"
+    );
+    static pathogenicity_genes = filterObject(
+        Gene.genes,
+        (type) => type == "pathogenicity"
+    );
+    static neutral_genes = filterObject(
+        Gene.genes,
+        (type) => type == "neutral"
+    );
+    static resistance_genes = filterObject(
+        Gene.genes,
+        (type) => type == "resistance"
+    );
+}

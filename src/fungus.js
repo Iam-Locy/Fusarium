@@ -1,280 +1,194 @@
-import Tip from "./tip.js";
-import { idGenerator, sample, wrap } from "./util.js";
+import { fungalNode, Tip } from "./fungalNode.js";
+import { clamp, deepCopyArray, idGenerator, Vector } from "./util.js";
 import { sim } from "./main.js";
+import { Tree } from "./tree.js";
+import { Genome, Gene } from "./genome.js";
 
 const genID = idGenerator();
 
 export default class Fungus {
-    constructor(colour, genome, resource, uptake, upkeep, parent) {
+    constructor(
+        pos,
+        colour,
+        genome,
+        resource,
+        uptake,
+        upkeep,
+        parent = "none"
+    ) {
         this.id = genID.next().value;
         this.colour = colour;
-        this.hypha = [];
-        this.tips = [];
-        this.hosts = [];
         this.genome = genome;
-        this.uptake = uptake;
-        this.upkeep = upkeep;
-        this.resource = resource;
-        this.connectedTo = [];
+        this.resources = {
+            amount: resource,
+            uptake: uptake,
+            upkeep: upkeep,
+        };
+        this.tips = [];
+        this.feeding_cells = new Set([]);
+        this.hypha = this.placeHypha(pos);
+        this.hosts = new Set([]);
+        this.connectedTo = new Set([]);
         this.parent = parent;
     }
 
-    addTip(x, y, direction) {
-        const tip = new Tip(x, y, direction, this);
+    placeHypha(pos) {
+        let hypha = new Tree(new fungalNode(pos, this));
 
+        let tip = new Tip(pos, this);
+
+        hypha.root.addChild(tip);
         this.tips.push(tip);
-        this.hypha.push([tip.x, tip.y]);
-        return tip;
-    }
 
-    branch() {
-        let branchPoint =
-            this.hypha[sim.rng.genrand_int(0, this.hypha.length - 1)];
-
-        let neighbours = [];
-
-        for (let i = 0; i < 4; i++) {
-            let rotation =
-                NEIGHBOUR_VECTORS[i].rotation +
-                [1, -1][sim.rng.genrand_int(0, 1)] *
-                    (sim.rng.random() * Math.PI);
-
-            let vector = {
-                x: branchPoint[0] + NEIGHBOUR_VECTORS[i].x,
-                y: branchPoint[1] + NEIGHBOUR_VECTORS[i].y,
-                rotation: (rotation + 2 * Math.PI) % (2 * Math.PI),
-            };
-
-            vector = { ...wrap(vector), rotation: vector.rotation };
-
-            let plantVec = {
-                x: Math.floor(vector.x / sim.config.plant_scale),
-                y: Math.floor(vector.y / sim.config.plant_scale),
-            };
-
-            let plant = sim.field.grid[plantVec.x][plantVec.y].plant;
-
-            if (plant) {
-                if (
-                    !this.hosts.find((host) => {
-                        return host == plant;
-                    })
-                ) {
-                    let canInvade = false;
-
-                    Object.keys(this.genome.core).forEach((key) => {
-                        if (this.genome.core[key] == "toxin") {
-                            if (!plant.genome.includes(key)) canInvade = true;
-                        }
-                    });
-
-                    Object.keys(this.genome.mobile).forEach((key) => {
-                        if (this.genome.mobile[key] == "toxin") {
-                            if (!plant.genome.includes(key)) canInvade = true;
-                        }
-                    });
-
-                    if (canInvade) {
-                        this.hosts.push(plant);
-                    }
-                }
-            }
-
-            let neighbour = sim.fusoxy.getGridpoint(vector.x, vector.y);
-
-            if (neighbour) {
-                neighbours.push([neighbour, vector]);
-            }
-        }
-
-        neighbours = neighbours.filter((n) => {
-            return !n[0].fungus;
-        });
-
-        if (neighbours.length == 0) {
-            return;
-        }
-
-        let tip = sample(neighbours)[1];
-
-        return this.addTip(tip.x, tip.y, tip.rotation);
+        sim.field.grid[pos.x][pos.y].nodes.add(hypha.root);
+        sim.field.grid[pos.x][pos.y].node_count += 1;
+        sim.field.grid[pos.x][pos.y].colour = this.colour;
+        return hypha;
     }
 
     vegetative() {
-        this.hypha.forEach((h) => {
-            let plant =
-                sim.field.grid[Math.floor(h[0] / sim.config.plant_scale)][
-                    Math.floor(h[1] / sim.config.plant_scale)
-                ].plant;
 
-            if (plant) {
-                if (
-                    this.hosts.find((host) => {
-                        return host == plant;
-                    })
-                    
-                ) {
-                    this.resource = this.resource + this.uptake;
+        if(this.genome.hasGenes(Object.keys(Gene.pathogenicity_genes),"or")){
+            this.colour = 2
+        }else{
+            this.colour = 1
+        }
+        
+        for (let cell of this.feeding_cells) {
+            let pos = cell.pos;
+            let gridPoint = sim.field.grid[pos.x][pos.y];
 
-                    plant.resource -= this.uptake;
-                    if (
-                        plant.resource / (plant.production / plant.upkeep) <
-                            0.1 ||
-                        isNaN(plant.resource)
-                    ) {
-                        plant.die();
-                    }
-                }
-
-                this.resource +=
-                    (plant.resource ** 2 * plant.upkeep) /
-                    sim.config.plant_scale;
+            if (gridPoint.food == 0) {
+                this.feeding_cells.delete(cell);
+                continue;
             }
 
-            this.resource -= this.upkeep;
-        });
+            this.resources.amount += this.resources.uptake;
 
-        return this.resource > 0;
+            let plant = gridPoint.plant;
+
+            if (plant) {
+                if (this.hosts.has(plant)) {
+                 
+                    this.resources.amount += clamp(
+                        0,
+                        plant.resources.amount,
+                        this.resources.uptake * sim.config.phi
+                    );
+
+                    plant.resources.amount -= clamp(
+                        0,
+                        plant.resources.amount,
+                        this.resources.uptake * sim.config.phi
+                    );
+                } 
+            }
+        }
+
+        let virulence_gene_count = 0;
+
+        for (let chromosome of this.genome.karyotype) {
+            for (let gene of chromosome) {
+                if (gene.type == "pathogenicity") {
+                    virulence_gene_count += 1;
+                }
+            }
+        }
+
+        this.resources.amount -=
+            this.hypha.nodeCount *
+            (this.resources.upkeep +
+                virulence_gene_count * sim.config.virulence_gene_penalty);
+
+        if (
+            typeof window === "object" &&
+            sim.time % sim.config.display_refresh === 0 &&
+            (sim.config.expected_spores_display || sim.config.resources_display)
+        ) {
+            for (let node of this.hypha.preOrderTraversal()) {
+                let pos = Vector.floored(node.pos);
+                if (sim.config.resources_display) {
+                    sim.field.grid[pos.x][pos.y].resources =
+                        this.resources.amount /
+                        sim.config.resources_display_unit;
+                }
+
+                if (sim.config.expected_spores_display) {
+                    sim.field.grid[pos.x][pos.y].eSpores = Math.floor(
+                        this.hypha.nodeCount ** sim.config.sporogenic_exponent
+                    );
+                }
+            }
+        }
+
+        return this.resources.amount > 0;
     }
 
-    getSpore(nSpores) {
-        let newGenome = {
-            core: { ...this.genome.core },
-            mobile: { ...this.genome.mobile },
-        };
+    getContacts() {
+        for (let cell of this.hypha.preOrderTraversal()) {
+            let pos = Vector.floored(cell.pos);
 
-        this.geneLoss(newGenome.core);
-        this.geneGain(newGenome.core);
+            for (let node of sim.field.grid[pos.x][pos.y].nodes) {
+                if (node.fungus.id != this.id) {
+                    this.connectedTo.add(node.fungus);
+                    node.fungus.connectedTo.add(this);
+                }
+            }
+        }
+    }
 
-        if (Object.keys(this.genome.mobile).length > 0) {
-            this.cutNpaste(newGenome.core, newGenome.mobile);
-            this.cutNpaste(newGenome.mobile, newGenome.core);
-            this.geneLoss(newGenome.mobile);
-            this.geneGain(newGenome.mobile);
+    getSpore(pos, nSpores) {
+        let newGenome = new Genome(deepCopyArray(this.genome.karyotype));
+
+        newGenome = Genome.geneGain(newGenome);
+
+        for (let i = 0; i < newGenome.karyotype.length; i++) {
+            {
+                newGenome.karyotype[i] = Genome.geneLoss(
+                    newGenome.karyotype[i]
+                );
+
+                if (!sim.config.accessory_hypermutator) {
+                    newGenome.karyotype[i] = Genome.geneConversion(
+                        newGenome.karyotype[i]
+                    );
+                }
+            }
         }
 
-        // #console.log(newGenome.core.a)
-        if (
-            newGenome.core.a === undefined &&
-            newGenome.mobile.a === undefined
-        ) {
+        if (newGenome.karyotype.length > 1) {
+            newGenome = Genome.cutNPaste(newGenome);
+
+            if (sim.config.accessory_hypermutator) {
+                newGenome.karyotype[1] = Genome.geneConversion(
+                    newGenome.karyotype[1]
+                );
+            }
+        }
+
+        newGenome = Genome.chromosomeLoss(newGenome);
+
+        if (!newGenome.hasGenes(Object.keys(Gene.house_keeping_genes))) {
             return false;
         }
 
         if (
-            newGenome.core.b === undefined &&
-            newGenome.mobile.b === undefined
+            sim.field.grid[Vector.floored(pos).x][Vector.floored(pos).y]
+                .node_count > 0
         ) {
             return false;
         }
-
-        if (
-            newGenome.core.c === undefined &&
-            newGenome.mobile.c === undefined
-        ) {
-            return false;
-        }
-
-        let colour = ["", "", ""];
-
-        Object.keys(newGenome.core).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        Object.keys(newGenome.mobile).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        //console.log(newGenome.core.a, "after")
-
-        colour = colour.join("")
 
         let spore = new Fungus(
-            colour == "" ? "none" : colour,
+            Vector.floored(pos),
+            this.colour,
             newGenome,
-            1000,
-            this.uptake,
-            this.upkeep,
+            clamp(0, 200, this.resources.amount / nSpores),
+            this.resources.uptake,
+            this.resources.upkeep,
             this.id
         );
 
-        //console.log(spore.genome)
         return spore;
     }
-
-    cutNpaste(chr1, chr2) {
-        Object.keys(chr1).forEach((gene) => {
-            if (sim.rng.random() < 0.01) {
-                chr2[gene] = chr1[gene];
-                delete chr1[gene];
-            }
-        });
-    }
-
-    geneLoss(chr) {
-        Object.keys(chr).forEach((gene) => {
-            if (sim.rng.random() < sim.config.loss_rate) {
-                delete chr[gene];
-            }
-        });
-    }
-
-    geneGain(chr) {
-        const genes = {
-            a: "hc",
-            b: "hc",
-            c: "hc",
-            x: "toxin",
-            y: "toxin",
-            z: "toxin",
-            k: "junk",
-            l: "junk",
-            m: "junk",
-        };
-
-        Object.keys(genes).forEach((gene) => {
-            if (sim.rng.random() < sim.config.gain_rate) {
-                chr[gene] = genes[gene];
-            }
-        });
-    }
-
-    hgt(network) {
-        if (Object.keys(this.genome.mobile).length == 0) return;
-
-        Object.keys(network.genome.mobile).forEach((gene) => {
-            if (!gene in this.genome.mobile) {
-                this.genome.mobile[gene] = network.genome.mobile[gene];
-            }
-        });
-
-        let colour = ["", "", ""];
-
-        Object.keys(this.genome.core).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        Object.keys(this.genome.mobile).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        colour = colour.join("")
-
-        this.colour = colour == "" ? "none" : colour
-    }
 }
-
-const NEIGHBOUR_VECTORS = [
-    { x: 0, y: 1, rotation: Math.PI / 2 },
-    { x: -1, y: 0, rotation: Math.PI },
-    { x: 1, y: 0, rotation: 0 },
-    { x: 0, y: -1, rotation: (3 * Math.PI) / 2 },
-];

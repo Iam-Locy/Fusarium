@@ -1,74 +1,67 @@
+import config from "./config.js";
 import Fungus from "./fungus.js";
 import Plant from "./plant.js";
-import { clamp, sample, shuffle } from "./util.js";
-//import Simulation from "../node_modules/cacatoo/dist/cacatoo.js";
-//import yargs from "yargs";
-//import { hideBin } from "yargs/helpers";
-
-// Configuration constant for the cacatoo simulation
-var config = {
-    title: "Fusarium",
-    description: "",
-    maxtime: 100000,
-    ncol: 1300,
-    nrow: 1300,
-    wrap: [true, true],
-    scale: 1,
-    skip: 5,
-    seed: Math.floor(Math.random() * 100),
-    statecolours: {
-        colour: {
-            none: "grey",
-            x: "red",
-            y: "blue",
-            z: "yellow",
-            xy: "purple",
-            xz: "orange",
-            yz: "green",
-            xyz: "white",
-        },
-        pColour: {
-            xy: "yellow",
-            xz: "blue",
-            yz: "red",
-        },
-    },
-    spores: 100, //Number of starting spores
-    spore_ratio: 0.01,
-    num_colours: 30,
-    year_len: 1000,
-    branch_chance: 0.8,
-    plant_scale: 100,
-    tilling: false,
-    uptake: 1,
-    upkeep: 0.1,
-    mobile_ratio: 1,
-    parasite_ratio: 0.5,
-    hgt_rate: 0.05,
-    loss_rate: 0.01,
-    gain_rate: 0.01
-};
+import { sample, shuffle, Vector, fileIDGenerator } from "./util.js";
+import { Gene, Genome } from "./genome.js";
+import setupDisplays from "./displays.js";
+import ecology from "./ecology.js";
 
 export let sim;
 
-// Declaration of the simulation
-const fusarium = (config) => {
+let fileName = "";
+
+const fusarium = async (config) => {
+
+    
+    let makeIndex;
+    let log;
+    let writeGrids;
+
+    if (typeof process == "object") {
+        ({ makeIndex, log, writeGrids } = await import("./log.js"));
+    }
+
     let tips = []; //Array of updated hypha tips
     let fungi = []; //Array of living fungi
-    let plants = [];
+    let plants = []; //Array of living plants
 
-    sim = new Simulation(config);
+    config.maxtime = config.season_len * config.max_season + 1;
+
+    if (typeof process === "object") {
+        const Simulation = (
+            await import("../node_modules/cacatoo/dist/cacatoo.js")
+        ).default;
+        sim = new Simulation(config);
+    } else {
+        sim = new Simulation(config);
+        window.sim = sim;
+    }
+
+    console.log("Seed:\t",sim.config.seed)
     sim.setupRandom();
-    sim.makeGridmodel("fusoxy");
 
-    sim.config = {
-        ...config,
-        ncol: (Math.floor(config.ncol / config.plant_scale) - 1) / 2,
-        nrow: (Math.floor(config.nrow / config.plant_scale) - 1) / 2,
-        scale: config.plant_scale * config.scale,
+    sim.counters = {
+        hgt_count: 0,
     };
 
-    sim.makeGridmodel("plants");
+    sim.makeGridmodel("field");
+
+    sim.initialGrid(sim.field, "colour", 0);
+    sim.initialGrid(sim.field, "node_count", 0);
+    sim.initialGrid(sim.field, "resources", 0);
+    sim.initialGrid(sim.field, "eSpores", 0);
+
+    sim.initialGrid(sim.field, "health", null);
+    sim.initialGrid(sim.field, "plant", null);
+    sim.initialGrid(sim.field, "plant_node", null);
+
+    sim.initialGrid(sim.field, "food", 0);
+
+    for (let x = 0; x < sim.config.ncol; x++) {
+        for (let y = 0; y < sim.config.nrow; y++) {
+            sim.field.grid[x][y].nodes = new Set([]);
+        }
+    }
 
     sim.config = {
         ...config,
@@ -77,161 +70,214 @@ const fusarium = (config) => {
         scale: config.plant_scale * config.scale,
     };
 
-    sim.makeGridmodel("field");
-
-    sim.config = config;
-
-    sim.initialGrid(sim.fusoxy, "fungus", null);
-    sim.initialGrid(sim.fusoxy, "colour", 0);
-
-    sim.initialGrid(sim.field, "health", null);
-    sim.initialGrid(sim.field, "plant", null);
+    sim.makeGridmodel("plants");
 
     sim.initialGrid(sim.plants, "plant", null);
 
+    sim.config = config;
+
     for (let i = 0; i < config.spores; i++) {
-        let x = sim.rng.genrand_int(0, config.ncol - 1);
-        let y = sim.rng.genrand_int(0, config.nrow - 1);
-
-        let toxin = sample(["x", "y", "z"]);
-
-        let genome = {
-            core: {
-                a: "hc",
-                b: "hc",
-                c: "hc",
-            },
-            mobile: {},
+        let pos = {
+            x: sim.rng.genrand_int(0, config.ncol - 1),
+            y: sim.rng.genrand_int(0, config.nrow - 1),
         };
+
+        let pathogenicity = sample(
+            Object.keys(Gene.pathogenicity_genes).slice(0, 2)
+        );
+
+        let chromosomes = [
+            [
+                ...Object.keys(Gene.house_keeping_genes).map(
+                    (key) => new Gene(key, Gene.genes[key])
+                ),
+            ],
+        ];
 
         if (sim.rng.random() < sim.config.parasite_ratio) {
             if (sim.rng.random() < sim.config.mobile_ratio) {
-                genome.mobile[toxin] = "toxin";
+                chromosomes.push([
+                    new Gene(pathogenicity, Gene.genes[pathogenicity]),
+                ]);
             } else {
-                genome.core[toxin] = "toxin";
+                chromosomes[0].push(
+                    new Gene(pathogenicity, Gene.genes[pathogenicity])
+                );
             }
         }
-
-        ["k", "l", "m"].forEach((g) => {
-            if (sim.rng.random() < 0.33) {
-                genome.core[g] = "junk";
-            }
-        });
-
-        let colour = ["", "", ""];
-
-        Object.keys(genome.core).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        Object.keys(genome.mobile).forEach((gene) => {
-            if (gene == "x") colour[0] = "x";
-            if (gene == "y") colour[1] = "y";
-            if (gene == "z") colour[2] = "z";
-        });
-
-        colour = colour.join("");
 
         let fungus = new Fungus(
-            colour == "" ? "none" : colour,
-            genome,
-            100,
-            sim.config.uptake,
-            sim.config.upkeep,
-            null
+            pos,
+            sim.rng.genrand_int(3, 15),
+            new Genome(chromosomes),
+            200,
+            sim.config.fungus_uptake,
+            sim.config.fungus_upkeep
         );
+
         fungi.push(fungus);
-
-        let tip = fungus.addTip(x, y, sim.rng.random() * 2 * Math.PI);
-        tips.push(tip);
-
-        sim.fusoxy.grid[x][y].fungus = fungus;
-        sim.fusoxy.grid[x][y].colour = fungus.colour;
+        tips.push(...fungus.tips);
     }
 
-    sim.createDisplay("fusoxy", "colour", "Fusarium oxysporum mycelium");
+    let plantNcol = Math.floor(sim.config.ncol / sim.config.plant_scale);
+    let plantNrow = Math.floor(sim.config.nrow / sim.config.plant_scale);
 
-    for (
-        let x = 0;
-        x < (Math.floor(sim.config.ncol / sim.config.plant_scale) - 1) / 2;
-        x++
-    ) {
-        for (
-            let y = 0;
-            y < (Math.floor(sim.config.nrow / sim.config.plant_scale) - 1) / 2;
-            y++
-        ) {
-            let genome =
-                sim.rng.random() < 0.33
-                    ? "xy"
-                    : sim.rng.random() < 0.5
-                    ? "xz"
-                    : "yz";
-            let plant = new Plant(x, y, 2000, genome, 0.02, 0.000005);
+    for (let x = 0; x < plantNcol; x++) {
+        for (let y = 0; y < plantNrow; y++) {
+            let chr = [];
+
+            for (let i = 1; i <= 2; i++) {
+                let gene = `r${i}`;
+
+                chr.push(gene);
+            }
+
+            let plant = new Plant(
+                { x, y },
+                sim.rng.genrand_int(1000, 4000),
+                chr.map((g) => new Gene(g, Gene.genes[g])),
+                sim.config.plant_production,
+                sim.config.plant_upkeep
+            );
 
             plants.push(plant);
-
-            sim.plants.grid[x][y].plant = plant;
-            sim.field.grid[2 * x + 1][2 * y + 1].health =
-                plant.resource / (plant.production / plant.upkeep);
-            sim.field.grid[2 * x + 1][2 * y + 1].plant = plant;
-            sim.field.grid[2 * x + 1][2 * y + 1].pColour = genome;
         }
     }
 
-    sim.field.colourGradient(
-        "health",
-        100,
-        [0, 0, 0],
-        [120, 90, 10],
-        [50, 170, 80]
-    );
-    sim.createDisplay_continuous({
-        model: "field",
-        property: "health",
-        label: "Field of plants",
-        minval: 0,
-        nticks: 10,
-        maxval: 1,
-    });
+    let allFungi = fungi;
+    let allPlants = plants;
 
-    sim.createDisplay("field", "pColour", "Fusarium oxysporum mycelium");
+    if (typeof window === "object") {
+        setupDisplays(sim);
+    }
 
-    sim.fusoxy.update = () => {
-        if (sim.time % config.year_len == 0 && sim.time != 0) {
-            getContacts();
-            let new_fungi = [];
-            let new_tips = [];
+    sim.field.update = () => {
+        if (sim.time % (sim.config.season_len / 10) == 0) {
+            if (typeof process === "object") {
+                log(sim, plants, fungi, fileName);
 
-            for (let x = 0; x < config.ncol; x++) {
-                for (let y = 0; y < config.nrow; y++) {
-                    sim.fusoxy.grid[x][y].fungus = null;
-                    sim.fusoxy.grid[x][y].colour = 0;
+                if (
+                    sim.time ===
+                    sim.config.max_season * sim.config.season_len
+                ) {
+                    writeGrids(sim, fileName);
                 }
             }
 
-            fungi.forEach((fungus) => {
-                fungus.connectedTo.forEach((network) => {
-                    if (sim.rng.random() < 0.1) {
-                        fungus.hgt(network);
-                    }
-                });
+            if (typeof window === "object") {
+                if (sim.time && sim.time % sim.config.season_len == 0) {
+                    sim.field.graphs["Fungi resources"].reset_plot();
+                    sim.field.graphs["Plants resources"].reset_plot();
+                }
 
-                let nSpores =
-                    (fungus.resource * fungus.hypha.length) ** (1 / 3) *
-                    sim.config.spore_ratio;
+                let fungiRes = [];
+                let pathogens = 0;
+                
+                for (let fungus of allFungi) {
+                    fungiRes.push(fungus.resources.amount);
+                    if (fungus.genome.hasGenes(Object.keys(Gene.pathogenicity_genes), "or")) pathogens++;
+                }
+
+                /* console.log(
+                    `Time: ${sim.time}, Fungi: ${
+                        allFungi.length
+                    }, Pathogens: ${pathogens}, Plants: ${
+                        allPlants.length
+                    } (${Math.round((pathogens / allFungi.length) * 100)}%)`
+                ); */
+
+                sim.field.plotArray(
+                    ["Amount"],
+                    fungiRes,
+                    new Array(allFungi.length).fill("grey"),
+                    "Fungi resources",
+                    {
+                        showLabelsOnHighlight: false,
+                        highlightSeriesOpts: {
+                            strokeWidth: 5,
+                            strokeBorderWidth: 1,
+                            highlightCircleSize: 1,
+                        },
+                    }
+                );
+
+                let plantRes = [];
+
+                for (let plant of allPlants) {
+                    plantRes.push(plant.resources.amount);
+                }
+
+                sim.field.plotArray(
+                    ["Amount"],
+                    plantRes,
+                    new Array(allPlants.length).fill("grey"),
+                    "Plants resources",
+                    {
+                        showLabelsOnHighlight: false,
+                        highlightSeriesOpts: {
+                            strokeWidth: 5,
+                            strokeBorderWidth: 1,
+                            highlightCircleSize: 1,
+                        },
+                    }
+                );
+            }
+        }
+
+        if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
+            let new_fungi = [];
+            let new_tips = [];
+
+            sim.counters.hgt_count = 0;
+
+            for (let x = 0; x < sim.field.nc; x++) {
+                for (let y = 0; y < sim.field.nr; y++) {
+                    sim.field.grid[x][y].colour = 0;
+                    sim.field.grid[x][y].nodes = new Set([]);
+                    sim.field.grid[x][y].node_count = 0;
+                    sim.field.grid[x][y].resources = 0;
+                    sim.field.grid[x][y].eSpores = 0;
+                }
+            }
+
+            for (let fungus of fungi) {
+                fungus.getContacts();
+
+                let potential_hgt_partners = [];
+
+                for (let neighbour of fungus.connectedTo) {
+                    if (fungus.genome.karyotype.length > 1) {
+                        if (neighbour.genome.karyotype.length == 1) {
+                            potential_hgt_partners.push(neighbour);
+                        }
+                    } else {
+                        if (neighbour.genome.karyotype.length > 1) {
+                            potential_hgt_partners.push(neighbour);
+                        }
+                    }
+                }
+
+                if (
+                    sim.rng.random() < sim.config.hgt_rate &&
+                    potential_hgt_partners.length > 0
+                ) {
+                    let neighbour = sample(potential_hgt_partners);
+
+                    [fungus.genome, neighbour.genome] =
+                        Genome.horizontalTransfer(
+                            fungus.genome,
+                            neighbour.genome
+                        );
+                }
+
+                let nSpores = Math.floor(
+                    fungus.hypha.nodeCount ** sim.config.sporogenic_exponent
+                );
 
                 for (let i = 0; i < nSpores; i++) {
-                    let newFungus = fungus.getSpore(nSpores);
-
-                    if (!newFungus) continue;
-                    new_fungi.push(newFungus);
-
                     let sporePos;
 
-                    if (config.tilling) {
+                    if (sim.config.tilling) {
                         sporePos = {
                             x: sim.rng.genrand_int(0, config.ncol - 1),
                             y: sim.rng.genrand_int(0, config.nrow - 1),
@@ -239,61 +285,71 @@ const fusarium = (config) => {
                     } else {
                         let index = sim.rng.genrand_int(
                             0,
-                            fungus.hypha.length - 1
+                            fungus.tips.length - 1
                         );
-                        sporePos = {
-                            x: fungus.hypha[index][0],
-                            y: fungus.hypha[index][1],
-                        };
+                        sporePos = new Vector(
+                            fungus.tips[index].pos.x,
+                            fungus.tips[index].pos.y
+                        );
                     }
 
-                    let spore = newFungus.addTip(
-                        sporePos.x,
-                        sporePos.y,
-                        sim.rng.random() * 2 * Math.PI
-                    );
+                    let newFungus = fungus.getSpore(sporePos, nSpores);
 
-                    new_tips.push(spore);
+                    if (!newFungus) continue;
+                    new_fungi.push(newFungus);
 
-                    sim.fusoxy.grid[sporePos.x][sporePos.y].fungus = newFungus;
-                    sim.fusoxy.grid[sporePos.x][sporePos.y].colour =
-                        newFungus.colour;
+                    new_tips.push(...newFungus.tips);
                 }
-            });
+            }
 
             tips = new_tips;
             fungi = new_fungi;
+            allFungi = fungi;
         }
+
         let new_fungi = [];
         let new_tips = [];
 
-        fungi.forEach((fungus) => {
-            if (!fungus.vegetative()) {
-                return;
-            }
-
-            new_fungi.push(fungus);
-
-            if (sim.rng.random() > config.branch_chance) {
-                return;
-            }
-
-            let branch = fungus.branch();
-            if (branch) {
-                sim.fusoxy.grid[branch.x][branch.y].fungus = fungus;
-                sim.fusoxy.grid[branch.x][branch.y].colour = fungus.colour;
-                new_tips.push(branch);
-            }
-        });
-
         tips = shuffle(tips, sim.rng);
 
-        tips.forEach((tip) => {
-            if (tip.parent.resource <= 0) return;
-            if (tip.grow(sim.fusoxy)) {
+        for (let tip of tips) {
+            if (tip.grow()) {
                 new_tips.push(tip);
             }
-        });
+
+            if (sim.rng.random() < sim.config.branch_chance) {
+                let branch_tip = tip.branch();
+
+                if (branch_tip) new_tips.push(branch_tip);
+            }
+        }
+
+        for (let fungus of fungi) {
+            if (!fungus.vegetative()) {
+                let temp = [];
+                for (let tip of new_tips) {
+                    if (!fungus.tips.find((t) => t.id === tip.id)) {
+                        temp.push(tip);
+                    }
+                }
+
+                if (
+                    sim.config.resources_display ||
+                    sim.config.expected_spores_display
+                )
+                    for (let node of fungus.hypha.preOrderTraversal()) {
+                        let pos = Vector.floored(node.pos);
+
+                        sim.field.grid[pos.x][pos.y].resources = 0;
+
+                        sim.field.grid[pos.x][pos.y].eSpores = 0;
+                    }
+
+                new_tips = [...temp];
+            } else {
+                new_fungi.push(fungus);
+            }
+        }
 
         fungi = new_fungi;
         tips = new_tips;
@@ -302,184 +358,65 @@ const fusarium = (config) => {
     sim.plants.update = function () {
         let newPlants = [];
 
-        if (sim.time % sim.config.year_len == 0 && sim.time != 0) {
-            let newPlantGrid = [...Array(sim.plants.grid.length)].map((e) =>
-                Array(sim.plants.grid[0].length).fill(null)
-            );
+        if (sim.time % sim.config.season_len == 0 && sim.time != 0) {
+            let eco_mode = sim.config.ecology;
 
-            let positions = [];
-
-            for (
-                let x = 0;
-                x <
-                (Math.floor(sim.config.ncol / sim.config.plant_scale) - 1) / 2;
-                x++
-            ) {
-                for (
-                    let y = 0;
-                    y <
-                    (Math.floor(sim.config.nrow / sim.config.plant_scale) - 1) /
-                        2;
-                    y++
-                ) {
-                    positions.push([x, y]);
+            if (eco_mode.includes("-")) {
+                if (sim.time < sim.config.maxtime / 2) {
+                    eco_mode = eco_mode.split("-")[0];
+                } else {
+                    eco_mode = eco_mode.split("-")[1];
                 }
             }
 
-            positions = shuffle(positions);
-
-            positions.forEach((p) => {
-                let x = p[0];
-                let y = p[1];
-
-                if (!sim.plants.grid[x][y].plant) {
-                    let neighs = sim.plants
-                        .getNeighbours8(this, x, y)
-                        .map((n) => {
-                            return n.plant;
-                        });
-
-                    /*  neighs = neighs.filter((n) => {
-                        return n != null;
-                    }); */
-
-                    let neigh = sample(neighs);
-
-                    if (neigh) {
-                        let newPlant = new Plant(
-                            x,
-                            y,
-                            1000,
-                            neigh.genome,
-                            neigh.production,
-                            neigh.upkeep
-                        );
-
-                        newPlants.push(newPlant);
-
-                        newPlantGrid[y][x] = newPlant;
-                    }
-                } else {
-                    newPlants.push(sim.plants.grid[x][y].plant);
-                    newPlantGrid[y][x] = sim.plants.grid[x][y].plant;
-                }
-            });
-
-            for (
-                let x = 0;
-                x <
-                (Math.floor(sim.config.ncol / sim.config.plant_scale) - 1) / 2;
-                x++
-            ) {
-                for (
-                    let y = 0;
-                    y <
-                    (Math.floor(sim.config.nrow / sim.config.plant_scale) - 1) /
-                        2;
-                    y++
+            newPlants = ecology[eco_mode](sim);
+            allPlants = newPlants;
+        } else {
+            for (let plant of plants) {
+                if (
+                    plant.resources.amount < 0.1 ||
+                    isNaN(plant.resources.amount)
                 ) {
-                    if (newPlantGrid[y][x]) {
-                        sim.plants.grid[x][y].plant = newPlantGrid[y][x];
-                        sim.field.grid[2 * x + 1][2 * y + 1].health =
-                            newPlantGrid[y][x].resource /
-                            (newPlantGrid[y][x].production /
-                                newPlantGrid[y][x].upkeep);
-                        sim.field.grid[2 * x + 1][2 * y + 1].plant =
-                            newPlantGrid[y][x];
-                        sim.field.grid[2 * x + 1][2 * y + 1].pColour =
-                            newPlantGrid[y][x].genome;
-                    } else {
-                        sim.plants.grid[x][y].plant = null;
-                        sim.field.grid[2 * x + 1][2 * y + 1].health = 0;
-                        sim.field.grid[2 * x + 1][2 * y + 1].plant = null;
-                        sim.field.grid[2 * x + 1][2 * y + 1].colour = null;
-                    }
+                    plant.die();
+                } else {
+                    plant.vegetative();
+                    newPlants.push(plant);
                 }
             }
         }
 
-        plants.forEach((plant) => {
-            plant.vegetative();
-
-            if (plant.resource < 0.1 || isNaN(plant.resource)) {
-                plant.die();
-            } else {
-                newPlants.push(plant);
-
-                sim.field.grid[2 * plant.x + 1][2 * plant.y + 1].health =
-                    plant.resource / (plant.production / plant.upkeep);
-            }
-        });
         plants = newPlants;
     };
+    sim.addButton("Toggle", function () {
+        sim.toggle_play();
+    });
 
-    sim.field.update = function () {
-        if (sim.time % sim.config.year_len == 0) {
-            let plantOut = "";
+    if (typeof process == "object") {
+        const fileID = fileIDGenerator();
 
-            plants.forEach((p) => {
-                plantOut += `${p.genome},${p.resource}\t`;
-            });
+        fileName = await makeIndex(sim, fileID);
 
-            sim.write_append(
-                `${plantOut}\n`,
-                `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_loss_${sim.config.loss_rate}_hgt_${sim.config.hgt_rate}_parasite_${sim.config.parasite_ratio}_mobile_${sim.config.mobile_ratio}_plants.txt`
-            );
-
-            let fungusOut = "";
-
-            fungi.forEach((f) => {
-                let genomeC = "";
-                Object.keys(f.genome.core).forEach((g) => (genomeC += g));
-
-                let genomeM = "";
-                Object.keys(f.genome.mobile).forEach((g) => (genomeM += g));
-                fungusOut += `${f.id},C:${genomeC},M:${genomeM},${f.uptake},${f.hosts.length},${f.parent}\t`;
-            });
-
-            sim.write_append(
-                `${fungusOut}\n`,
-                `./output/Seed_${sim.config.seed}_uptake_${sim.config.uptake}_loss_${sim.config.loss_rate}_hgt_${sim.config.hgt_rate}_parasite_${sim.config.parasite_ratio}_mobile_${sim.config.mobile_ratio}_fungi.txt`
-            );
-        }
-    };
-
-    sim.start();
-};
-
-const getContacts = () => {
-    for (let x = 0; x < sim.config.ncol; x++) {
-        for (let y = 0; y < sim.config.nrow; y++) {
-            let cell = sim.fusoxy.grid[x][y];
-
-            if (cell.fungus) {
-                if (cell.fungus.resource <= 0) continue;
-                let neigh = sim.fusoxy.getNeighbours4(sim.fusoxy, x, y);
-
-                neigh.forEach((n) => {
-                    if (!n.fungus) return;
-
-                    if (n.fungus.id == cell.fungus.id) return;
-
-                    if (cell.fungus.connectedTo.includes(n.fungus)) return;
-
-                    cell.fungus.connectedTo.push(n.fungus);
-                    n.fungus.connectedTo.push(cell.fungus);
-                });
-            }
-        }
+        sim.start();
+    } else {
+        sim.start();
     }
 };
 
 // Run the simulation
 if (typeof process === "object") {
-    let cmd_params = yargs(hideBin(process.argv)).argv;
+    const yargs = (await import("yargs")).default;
+    const yargs_options = await import("./options.js");
+    const { hideBin } = await import("yargs/helpers");
 
-    Object.keys(config).forEach((arg) => {
+    let cmd_params = yargs()
+        .options(yargs_options)
+        .parse(hideBin(process.argv));
+
+    for (let arg in config) {
         if (typeof cmd_params[arg] != "undefined") {
             config[arg] = cmd_params[arg];
         }
-    });
+    }
 
     fusarium(config);
 } else {
