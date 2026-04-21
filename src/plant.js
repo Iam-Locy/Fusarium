@@ -94,7 +94,7 @@ export default class Plant {
                 sim.field.grid,
                 ["food", "plant_node"],
                 [0, null],
-                15,
+                this.radius * 5,
                 node.pos
             );
         }
